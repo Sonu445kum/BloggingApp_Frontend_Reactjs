@@ -8,8 +8,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { ToastContainer } from "react-toastify";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
-  <Provider store={store}>
-    <App />
-    <ToastContainer position="top-right" autoClose={3000} />
-  </Provider>
+    <Provider store={store}>
+      <App />
+      {/* ToastContainer ko yaha rakha hai, Provider ke andar */}
+      <ToastContainer position="top-right" autoClose={3000} />
+    </Provider>
+  
 );
