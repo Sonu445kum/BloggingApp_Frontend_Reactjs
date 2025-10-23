@@ -16,7 +16,16 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Blog", "User", "Category", "Comment", "Notification", "Bookmark"],
+  tagTypes: [
+    "Blog",
+    "User",
+    "Category",
+    "Comment",
+    "Notification",
+    "Bookmark",
+    "Profile",
+    "Stats",
+  ],
 
   endpoints: (builder) => ({
     /* ============================
@@ -63,6 +72,26 @@ export const apiSlice = createApi({
     }),
 
     /* ============================
+       📝 PROFILES AND STATUS
+    ============================ */
+    getProfile: builder.query({
+      query: () => "profile/",
+      providesTags: ["Profile"],
+    }),
+    updateProfile: builder.mutation({
+      query: (formData) => ({
+        url: "profile/update/",
+        method: "PATCH",
+        body: formData,
+      }),
+      invalidatesTags: ["Profile"],
+    }),
+    // Add stats hook
+    getStats: builder.query({
+      query: () => "stats/", // matches your backend endpoint
+    }),
+
+    /* ============================
        📝 BLOGS CRUD
     ============================ */
     getBlogs: builder.query({
@@ -77,9 +106,9 @@ export const apiSlice = createApi({
       query: (formData) => ({
         url: "blogs/create/",
         method: "POST",
-        body: formData, // FormData for file upload
+        body: formData, // FormData for file uploads
       }),
-      invalidatesTags: [{ type: "Blog" }, { type: "Blog", id: "LIST" }],
+      invalidatesTags: ["Blog"],
     }),
     updateBlog: builder.mutation({
       query: ({ id, data }) => ({
@@ -98,7 +127,7 @@ export const apiSlice = createApi({
     }),
 
     /* ============================
-       🟢 BLOG ACTIONS (Admin/User)
+       🟢 BLOG ACTIONS
     ============================ */
     approveBlog: builder.mutation({
       query: (id) => ({
@@ -124,11 +153,11 @@ export const apiSlice = createApi({
         method: "POST",
         body: formData,
       }),
-      invalidatesTags: [{ type: "Blog" }],
+      invalidatesTags: ["Blog"],
     }),
 
     /* ============================
-       🧩 ADD TO BLOG (duplicate feature)
+       🧩 ADD TO BLOG
     ============================ */
     addToBlog: builder.mutation({
       query: (blogId) => ({
@@ -282,6 +311,11 @@ export const {
   useResetPasswordMutation,
   useChangePasswordMutation,
   useCurrentUserQuery,
+
+  // Profiles
+  useGetProfileQuery,
+  useUpdateProfileMutation,
+  useGetStatsQuery,
 
   // Blogs
   useGetBlogsQuery,
