@@ -11,135 +11,106 @@ const BlogEdit = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  // Fetch blog by ID
-  const { data: blog, isLoading, isError, refetch } = useGetBlogQuery(id);
-  const [updateBlog, { isLoading: updating }] = useUpdateBlogMutation();
+  // Fetch existing blog
+  const { data: blog, isLoading, isError } = useGetBlogQuery(id);
 
+  // Mutation for updating blog
+  const [updateBlog, { isLoading: isUpdating }] = useUpdateBlogMutation();
+
+  // Form state
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [category, setCategory] = useState("");
-  const [file, setFile] = useState(null);
+  const [status, setStatus] = useState("");
+  const [tags, setTags] = useState("");
 
-  const token = localStorage.getItem("token");
-  const isLoggedIn = !!token;
-
+  // Populate form when blog data is fetched
   useEffect(() => {
     if (blog) {
-      // Only allow current user to edit
-      if (blog.author?.id !== parseInt(localStorage.getItem("userId"))) {
-        toast.error("You can only edit your own blog!");
-        navigate("/");
-        return;
-      }
-
-      setTitle(blog.title);
-      setContent(blog.content);
-      setCategory(blog.category || "");
+      setTitle(blog.title || "");
+      setContent(blog.content || "");
+      setStatus(blog.status || "");
+      setTags(blog.tags?.join(", ") || "");
     }
-  }, [blog, navigate]);
-
-  if (isLoading) return <Loader />;
-  if (isError) return <p className="text-center mt-10 text-red-500">Error loading blog.</p>;
+  }, [blog]);
 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim() || !content.trim()) {
-      toast.error("Title and Content are required!");
-      return;
+    if (!title || !content || !status || !tags) {
+      return toast.error("All fields are required!");
     }
 
     try {
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("content", content);
-      if (category) formData.append("category", category);
-      if (file) formData.append("file", file);
-
-      await updateBlog({ id, data: formData }).unwrap();
+      await updateBlog({
+        id,
+        data: { title, content, status, tags: tags.split(",") },
+      }).unwrap();
 
       toast.success("Blog updated successfully!");
-      refetch();
-      navigate(`/blogs/${id}`);
+      navigate(`/blogs/${id}`); // redirect to blog detail page
     } catch (err) {
-      console.error("Error updating blog:", err);
-      toast.error(
-        err?.data?.errors || err?.data?.message || "Failed to update blog"
-      );
+      console.error(err);
+      toast.error("Failed to update blog!");
     }
   };
 
-  return (
-    <div className="max-w-3xl mx-auto mt-12 bg-white shadow-lg p-8 rounded-2xl">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-        ✏️ Edit Blog
-      </h2>
+  if (isLoading) return <Loader />;
+  if (isError) return <p>Error loading blog.</p>;
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Title */}
+  return (
+    <div className="max-w-2xl mx-auto p-4">
+      <h2 className="text-2xl font-bold mb-4">Edit Blog</h2>
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-gray-700 mb-2">Title</label>
+          <label className="block mb-1">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter blog title"
-            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
+            className="w-full border p-2 rounded"
           />
         </div>
 
-        {/* Content */}
         <div>
-          <label className="block text-gray-700 mb-2">Content</label>
+          <label className="block mb-1">Content</label>
           <textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            className="w-full border p-2 rounded"
             rows={6}
-            placeholder="Write your blog content..."
-            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            required
-          />
+          ></textarea>
         </div>
 
-        {/* Category */}
         <div>
-          <label className="block text-gray-700 mb-2">Category (optional)</label>
-          <input
-            type="number"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            placeholder="Enter category ID"
-            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
+          <label className="block mb-1">Status</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full border p-2 rounded"
+          >
+            <option value="">Select Status</option>
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+          </select>
         </div>
 
-        {/* Image Upload */}
         <div>
-          <label className="block text-gray-700 mb-2">Upload Image (optional)</label>
+          <label className="block mb-1">Tags (comma separated)</label>
           <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="w-full border border-gray-300 rounded-lg p-2 cursor-pointer"
+            type="text"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            className="w-full border p-2 rounded"
           />
-          {file && (
-            <p className="text-sm text-gray-500 mt-1">
-              Selected file: <span className="font-medium">{file.name}</span>
-            </p>
-          )}
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={updating}
-          className={`w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition ${
-            updating ? "opacity-60 cursor-not-allowed" : ""
-          }`}
+          disabled={isUpdating}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
-          {updating ? "Updating..." : "Update Blog"}
+          {isUpdating ? "Updating..." : "Update Blog"}
         </button>
       </form>
     </div>

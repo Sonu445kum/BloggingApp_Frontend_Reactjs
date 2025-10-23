@@ -5,6 +5,7 @@ import {
   useGetBlogQuery,
   useAddCommentMutation,
   useToggleReactionMutation,
+  useDeleteBlogMutation, // new mutation
 } from "../../api/apiSlice";
 import Loader from "../../components/Loader";
 
@@ -15,8 +16,8 @@ const BlogDetail = () => {
   const [newComment, setNewComment] = useState("");
   const [addComment, { isLoading: addingComment }] = useAddCommentMutation();
   const [toggleReaction, { isLoading: reacting }] = useToggleReactionMutation();
+  const [deleteBlog] = useDeleteBlogMutation();
 
-  // Login check
   const token = localStorage.getItem("token");
   const isLoggedIn = !!token;
 
@@ -65,27 +66,59 @@ const BlogDetail = () => {
     }
   };
 
-  // Navigate to BlogCreate.jsx
+  // Navigate to Create Blog
   const handleNavigateToCreate = () => {
     if (!isLoggedIn) {
       toast.error("You must be logged in to create a blog!");
       navigate("/login");
       return;
     }
-    navigate("/blogs/create"); // Adjust route according to your routing
+    navigate("/blogs/create");
   };
+
+  // Delete Blog
+const handleDeleteBlog = async () => {
+  if (!window.confirm("Are you sure you want to delete this blog?")) return;
+
+  try {
+    await deleteBlog(id).unwrap(); // pass only id
+    toast.success("Blog deleted successfully!");
+    navigate("/blogs");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to delete blog");
+  }
+};
 
   return (
     <div className="max-w-4xl mx-auto mt-12 p-6 bg-white shadow-lg rounded-2xl relative">
-      {/* Navigate to BlogCreate Button */}
-      {isLoggedIn && (
-        <button
-          onClick={handleNavigateToCreate}
-          className="absolute top-5 right-5 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition"
-        >
-          ✍️ Create New Blog
-        </button>
-      )}
+      {/* Buttons: Create / Edit / Delete */}
+      <div className="flex justify-start gap-3 mb-4">
+        {isLoggedIn && (
+          <button
+            onClick={handleNavigateToCreate}
+            className="bg-purple-500 text-white px-3 py-1 rounded hover:bg-purple-600 transition flex items-center gap-1"
+          >
+            ✍️ Create New
+          </button>
+        )}
+        {isLoggedIn && (
+          <button
+            onClick={() => navigate(`/blogs/edit/${id}`)}
+            className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition flex items-center gap-1"
+          >
+            ✏️ Edit
+          </button>
+        )}
+        {isLoggedIn && (
+          <button
+            onClick={handleDeleteBlog}
+            className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition flex items-center gap-1"
+          >
+            🗑️ Delete
+          </button>
+        )}
+      </div>
 
       {/* Title */}
       <h1 className="text-3xl font-bold mb-4 text-gray-900">{title}</h1>

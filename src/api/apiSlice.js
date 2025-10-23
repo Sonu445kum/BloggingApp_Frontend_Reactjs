@@ -81,6 +81,14 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Blog" }, { type: "Blog", id: "LIST" }],
     }),
+    updateBlog: builder.mutation({
+      query: ({ id, data }) => ({
+        url: `blogs/${id}/update/`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Blog"],
+    }),
     deleteBlog: builder.mutation({
       query: (id) => ({
         url: `blogs/${id}/delete/`,
@@ -118,7 +126,6 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: [{ type: "Blog" }],
     }),
-
 
     /* ============================
        🧩 ADD TO BLOG (duplicate feature)
