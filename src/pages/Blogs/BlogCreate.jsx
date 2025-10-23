@@ -12,77 +12,84 @@ const BlogCreate = () => {
     title: "",
     content: "",
     category: "",
+    tags: "",
     status: "draft",
   });
 
   const [file, setFile] = useState(null);
 
-  // Handle text fields
+  // Handle text input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle file selection
+  // Handle file input
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
-  // Submit Blog
+  // Submit blog
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast.error("You must be logged in to create a blog");
-        return;
-      }
 
-      // 1️ Create blog first
-      const response = await createBlog(formData).unwrap();
+    // Validate all required fields
+    if (!formData.title || !formData.content || !formData.category || !formData.tags || !formData.status || !file) {
+      toast.error("All fields (title, content, category, tags, status, image) are required!");
+      return;
+    }
+
+    try {
+      const data = new FormData();
+      data.append("title", formData.title);
+      data.append("content", formData.content);
+      data.append("category", formData.category);
+      data.append("status", formData.status);
+      formData.tags.split(",").forEach((tag) => data.append("tags", tag.trim()));
+      data.append("file", file);
+
+      // Create blog
+      const response = await createBlog(data).unwrap();
+
+      // Safe blog ID extraction
       const blogId = response?.id || response?.data?.id;
 
-      toast.success(" Blog created successfully!");
+      toast.success("📝 Blog created successfully!");
 
-      // 2️ Upload image if file selected
+      // Upload image if needed
       if (file && blogId) {
-        const imageData = new FormData();
-        imageData.append("blog_id", blogId);
-        imageData.append("file", file);
-
-        await uploadMedia(imageData).unwrap();
+        const mediaData = new FormData();
+        mediaData.append("blog_id", blogId);
+        mediaData.append("files", file);
+        await uploadMedia(mediaData).unwrap();
         toast.success("📸 Image uploaded successfully!");
       }
 
-      // 3️ Redirect to blog list
-      navigate("/blogs");
+      // Redirect: best UX → Blog Detail page
+      if (blogId) {
+        navigate(`/blogs/${blogId}`);
+      } else {
+        navigate("/blogs"); // fallback
+      }
     } catch (err) {
-      console.error("Error:", err);
-      toast.error(
-        err?.data?.errors
-          ? JSON.stringify(err.data.errors)
-          : err?.data?.message
-          ? err.data.message
-          : "Failed to create blog"
-      );
+      console.error("Error creating blog:", err);
+      toast.error("Failed to create blog");
     }
   };
 
   return (
     <div className="max-w-3xl mx-auto mt-12 bg-white shadow-lg p-8 rounded-2xl">
-      <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
-        ✍️ Create a New Blog
-      </h2>
+      <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">✍️ Create a New Blog</h2>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Title */}
         <div>
-          <label className="block text-gray-700 mb-2">Title</label>
+          <label className="block text-gray-700 mb-2">Title *</label>
           <input
             type="text"
             name="title"
-            placeholder="Enter your blog title"
             value={formData.title}
             onChange={handleChange}
+            placeholder="Enter your blog title"
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           />
@@ -90,13 +97,13 @@ const BlogCreate = () => {
 
         {/* Content */}
         <div>
-          <label className="block text-gray-700 mb-2">Content</label>
+          <label className="block text-gray-700 mb-2">Content *</label>
           <textarea
             name="content"
-            placeholder="Write your blog content..."
-            rows="6"
             value={formData.content}
             onChange={handleChange}
+            rows={6}
+            placeholder="Write your blog content..."
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
             required
           ></textarea>
@@ -104,26 +111,43 @@ const BlogCreate = () => {
 
         {/* Category */}
         <div>
-          <label className="block text-gray-700 mb-2">Category</label>
+          <label className="block text-gray-700 mb-2">Category ID *</label>
           <input
-            type="text"
+            type="number"
             name="category"
-            placeholder="Enter category name"
             value={formData.category}
             onChange={handleChange}
+            placeholder="Enter category ID"
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
+          />
+        </div>
+
+        {/* Tags */}
+        <div>
+          <label className="block text-gray-700 mb-2">Tags (comma-separated) *</label>
+          <input
+            type="text"
+            name="tags"
+            value={formData.tags}
+            onChange={handleChange}
+            placeholder="e.g. nature,travel,peace"
+            className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
           />
         </div>
 
         {/* Status */}
         <div>
-          <label className="block text-gray-700 mb-2">Status</label>
+          <label className="block text-gray-700 mb-2">Status *</label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
             className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            required
           >
+            <option value="">Select status</option>
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
@@ -131,12 +155,13 @@ const BlogCreate = () => {
 
         {/* Image Upload */}
         <div>
-          <label className="block text-gray-700 mb-2">Upload Image</label>
+          <label className="block text-gray-700 mb-2">Upload Image *</label>
           <input
             type="file"
             accept="image/*"
             onChange={handleFileChange}
             className="w-full border border-gray-300 rounded-lg p-2 cursor-pointer"
+            required
           />
           {file && (
             <p className="text-sm text-gray-500 mt-1">
@@ -145,12 +170,12 @@ const BlogCreate = () => {
           )}
         </div>
 
-        {/* Submit Button */}
+        {/* Submit */}
         <button
           type="submit"
           disabled={isLoading}
           className={`w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-all ${
-            isLoading && "opacity-60 cursor-not-allowed"
+            isLoading ? "opacity-60 cursor-not-allowed" : ""
           }`}
         >
           {isLoading ? "Creating..." : "Create Blog"}

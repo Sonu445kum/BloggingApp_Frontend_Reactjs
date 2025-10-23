@@ -1,27 +1,24 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   useGetBlogQuery,
   useAddCommentMutation,
   useToggleReactionMutation,
-  useAddToBlogMutation,
 } from "../../api/apiSlice";
 import Loader from "../../components/Loader";
 
 const BlogDetail = () => {
   const { id } = useParams();
-  const {
-    data: blog,
-    isLoading,
-    isError,
-    refetch, //  auto refetch after comment or reaction
-  } = useGetBlogQuery(id);
-
+  const navigate = useNavigate();
+  const { data: blog, isLoading, isError, refetch } = useGetBlogQuery(id);
   const [newComment, setNewComment] = useState("");
   const [addComment, { isLoading: addingComment }] = useAddCommentMutation();
   const [toggleReaction, { isLoading: reacting }] = useToggleReactionMutation();
-  const [addToBlog, { isLoading: addingToBlog }] = useAddToBlogMutation();
+
+  // Login check
+  const token = localStorage.getItem("token");
+  const isLoggedIn = !!token;
 
   if (isLoading) return <Loader />;
   if (isError) return <p className="text-center mt-10 text-red-500">Error fetching blog.</p>;
@@ -40,7 +37,7 @@ const BlogDetail = () => {
     comments,
   } = blog;
 
-  //  Add Comment Handler
+  // Add Comment
   const handleAddComment = async () => {
     if (!newComment.trim()) {
       toast.error("Comment cannot be empty");
@@ -50,36 +47,46 @@ const BlogDetail = () => {
       await addComment({ blogId: id, content: newComment }).unwrap();
       toast.success("Comment added successfully!");
       setNewComment("");
-      refetch(); //  instantly refresh blog data
+      refetch();
     } catch (err) {
       toast.error("Failed to add comment");
     }
   };
 
-  //  Reaction Handler
+  // Reactions
   const handleReaction = async (reactionType) => {
     try {
       await toggleReaction({ blogId: id, reactionType }).unwrap();
       toast.success(`${reactionType} reaction updated!`);
-      refetch(); //  instantly update like count
+      refetch();
     } catch (err) {
       console.error(err);
       toast.error("Failed to react to blog");
     }
   };
 
-  //  AddToBlog Handler
-  const handleAddToBlog = async () => {
-    try {
-      await addToBlog(id).unwrap();
-      toast.success("Added to blog successfully!");
-    } catch (err) {
-      toast.error("Failed to add to blog");
+  // Navigate to BlogCreate.jsx
+  const handleNavigateToCreate = () => {
+    if (!isLoggedIn) {
+      toast.error("You must be logged in to create a blog!");
+      navigate("/login");
+      return;
     }
+    navigate("/blogs/create"); // Adjust route according to your routing
   };
 
   return (
-    <div className="max-w-4xl mx-auto mt-12 p-6 bg-white shadow-lg rounded-2xl transition-all duration-300">
+    <div className="max-w-4xl mx-auto mt-12 p-6 bg-white shadow-lg rounded-2xl relative">
+      {/* Navigate to BlogCreate Button */}
+      {isLoggedIn && (
+        <button
+          onClick={handleNavigateToCreate}
+          className="absolute top-5 right-5 bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 transition"
+        >
+          ✍️ Create New Blog
+        </button>
+      )}
+
       {/* Title */}
       <h1 className="text-3xl font-bold mb-4 text-gray-900">{title}</h1>
 
@@ -122,7 +129,7 @@ const BlogDetail = () => {
       <div className="prose prose-lg mb-6 text-gray-800">{content}</div>
 
       {/* Reactions */}
-      <div className="flex flex-wrap gap-4 mb-6">
+      <div className="flex flex-wrap gap-4 mb-6 items-center">
         {["like", "love", "laugh", "angry"].map((reaction) => (
           <button
             key={reaction}
@@ -142,15 +149,6 @@ const BlogDetail = () => {
             {reaction.charAt(0).toUpperCase() + reaction.slice(1)}
           </button>
         ))}
-
-        {/* AddToBlog Button */}
-        <button
-          onClick={handleAddToBlog}
-          disabled={addingToBlog}
-          className="flex items-center gap-1 bg-purple-500 text-white px-3 py-1 rounded-full hover:bg-purple-600 transition disabled:opacity-50"
-        >
-          ➕ AddToBlog
-        </button>
 
         <span>💬 {total_comments || 0} Comments</span>
       </div>
@@ -182,8 +180,7 @@ const BlogDetail = () => {
             {comments.map((comment) => (
               <div key={comment.id} className="border rounded-lg p-3 bg-gray-50">
                 <p className="text-gray-700">
-                  <span className="font-semibold">{comment.user.username}</span>:{" "}
-                  {comment.content}
+                  <span className="font-semibold">{comment.user.username}</span>: {comment.content}
                 </p>
                 <p className="text-gray-400 text-xs mt-1">
                   {new Date(comment.created_at).toLocaleString()}
@@ -195,8 +192,7 @@ const BlogDetail = () => {
                     {comment.replies.map((reply) => (
                       <div key={reply.id} className="border-l-2 border-gray-300 pl-2">
                         <p className="text-gray-700">
-                          <span className="font-semibold">{reply.user.username}</span>:{" "}
-                          {reply.content}
+                          <span className="font-semibold">{reply.user.username}</span>: {reply.content}
                         </p>
                         <p className="text-gray-400 text-xs mt-1">
                           {new Date(reply.created_at).toLocaleString()}

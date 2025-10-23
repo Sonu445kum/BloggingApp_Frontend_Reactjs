@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-//  Dynamic BASE_URL setup
+// 🌍 Dynamic BASE_URL setup from .env
 const BASE_URL = import.meta.env.VITE_API_URL?.endsWith("/")
   ? `${import.meta.env.VITE_API_URL}api/`
   : `${import.meta.env.VITE_API_URL}/api/`;
@@ -16,17 +16,12 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: [
-    "Blog",
-    "User",
-    "Category",
-    "Comment",
-    "Notification",
-    "Bookmark",
-  ],
+  tagTypes: ["Blog", "User", "Category", "Comment", "Notification", "Bookmark"],
 
   endpoints: (builder) => ({
-    // ---------------- AUTH ----------------
+    /* ============================
+       🔐 AUTHENTICATION
+    ============================ */
     login: builder.mutation({
       query: (data) => ({
         url: "auth/login/",
@@ -67,7 +62,9 @@ export const apiSlice = createApi({
       providesTags: ["User"],
     }),
 
-    // ---------------- BLOGS ----------------
+    /* ============================
+       📝 BLOGS CRUD
+    ============================ */
     getBlogs: builder.query({
       query: () => "blogs/",
       providesTags: ["Blog"],
@@ -77,20 +74,12 @@ export const apiSlice = createApi({
       providesTags: ["Blog"],
     }),
     createBlog: builder.mutation({
-      query: (data) => ({
+      query: (formData) => ({
         url: "blogs/create/",
         method: "POST",
-        body: data,
+        body: formData, // FormData for file upload
       }),
-      invalidatesTags: ["Blog"],
-    }),
-    updateBlog: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `blogs/${id}/update/`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Blog"],
+      invalidatesTags: [{ type: "Blog" }, { type: "Blog", id: "LIST" }],
     }),
     deleteBlog: builder.mutation({
       query: (id) => ({
@@ -99,6 +88,10 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Blog"],
     }),
+
+    /* ============================
+       🟢 BLOG ACTIONS (Admin/User)
+    ============================ */
     approveBlog: builder.mutation({
       query: (id) => ({
         url: `blogs/${id}/approve/`,
@@ -113,16 +106,23 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Blog"],
     }),
+
+    /* ============================
+       📸 BLOG MEDIA UPLOAD
+    ============================ */
     uploadBlogMedia: builder.mutation({
       query: (formData) => ({
         url: "blogs/media/upload/",
         method: "POST",
         body: formData,
       }),
-      invalidatesTags: ["Blog"],
+      invalidatesTags: [{ type: "Blog" }],
     }),
-     //  ADD TO BLOG (Re-added)
-    //  AddToBlog (creates new blog from existing one)
+
+
+    /* ============================
+       🧩 ADD TO BLOG (duplicate feature)
+    ============================ */
     addToBlog: builder.mutation({
       query: (blogId) => ({
         url: `blogs/${blogId}/add-to-blog/`,
@@ -131,7 +131,9 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
 
-    // ---------------- CATEGORIES ----------------
+    /* ============================
+       🏷️ CATEGORIES
+    ============================ */
     getCategories: builder.query({
       query: () => "categories/",
       providesTags: ["Category"],
@@ -153,7 +155,9 @@ export const apiSlice = createApi({
       invalidatesTags: ["Category"],
     }),
 
-    // ---------------- COMMENTS ----------------
+    /* ============================
+       💬 COMMENTS
+    ============================ */
     getComments: builder.query({
       query: ({ blogId }) => `blogs/${blogId}/comments/`,
       providesTags: ["Comment"],
@@ -174,7 +178,9 @@ export const apiSlice = createApi({
       invalidatesTags: ["Comment", "Blog"],
     }),
 
-    // ---------------- REACTIONS ----------------
+    /* ============================
+       😍 REACTIONS
+    ============================ */
     toggleReaction: builder.mutation({
       query: ({ blogId, reactionType }) => ({
         url: `blogs/${blogId}/reactions/toggle/`,
@@ -184,7 +190,9 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
 
-    // ---------------- BOOKMARKS ----------------
+    /* ============================
+       🔖 BOOKMARKS
+    ============================ */
     toggleBookmark: builder.mutation({
       query: ({ blogId }) => ({
         url: `blogs/${blogId}/bookmark/`,
@@ -197,7 +205,9 @@ export const apiSlice = createApi({
       providesTags: ["Bookmark"],
     }),
 
-    // ---------------- NOTIFICATIONS ----------------
+    /* ============================
+       🔔 NOTIFICATIONS
+    ============================ */
     getNotifications: builder.query({
       query: () => "user/notifications/",
       providesTags: ["Notification"],
@@ -224,7 +234,9 @@ export const apiSlice = createApi({
       invalidatesTags: ["Notification"],
     }),
 
-    // ---------------- ADMIN ----------------
+    /* ============================
+       👑 ADMIN PANEL
+    ============================ */
     getUsers: builder.query({
       query: () => "admin/users/",
       providesTags: ["User"],
@@ -252,7 +264,9 @@ export const apiSlice = createApi({
   }),
 });
 
-// ---------------- EXPORT HOOKS ----------------
+/* ============================
+   ✅ EXPORT HOOKS
+============================ */
 export const {
   // Auth
   useLoginMutation,
