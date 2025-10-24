@@ -14,7 +14,6 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({ email: "", password: "" });
 
-  // Real-time validation
   const validate = () => {
     const errs = {};
     if (!email.trim()) errs.email = "Username is required";
@@ -32,12 +31,11 @@ export default function Login() {
     try {
       const res = await login({ username: email, password }).unwrap();
 
-      // Save token in localStorage
       localStorage.setItem("token", res.tokens.access);
       localStorage.setItem("user", JSON.stringify(res.user));
 
       toast.success("Login successful!");
-      navigate("/blogs"); // redirect after login
+      navigate("/blogs");
     } catch (err) {
       toast.error(err?.data?.non_field_errors?.[0] || "Login failed");
     } finally {
@@ -65,7 +63,6 @@ export default function Login() {
             </h2>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {/* Username */}
               <div className="flex flex-col">
                 <input
                   type="text"
@@ -81,7 +78,6 @@ export default function Login() {
                 )}
               </div>
 
-              {/* Password */}
               <div className="relative flex flex-col">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -102,9 +98,15 @@ export default function Login() {
                 {errors.password && (
                   <span className="text-red-500 text-sm mt-1">{errors.password}</span>
                 )}
+                {/* Forgot Password Link */}
+                <Link
+                  to="/auth/forgot-password"
+                  className="text-sm text-blue-600 hover:underline mt-2 self-end"
+                >
+                  Forgot password?
+                </Link>
               </div>
 
-              {/* Login Button */}
               <button
                 type="submit"
                 disabled={loading}
