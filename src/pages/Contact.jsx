@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -7,15 +9,29 @@ export default function Contact() {
     email: "",
     message: "",
   });
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Message sent by ${formData.name}`);
-    setFormData({ name: "", email: "", message: "" });
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}api/contact/`,
+        formData
+      );
+      toast.success(response.data.success);
+      setFormData({ name: "", email: "", message: "" });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.error || "Something went wrong. Try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -66,9 +82,10 @@ export default function Contact() {
         <motion.button
           whileHover={{ scale: 1.05 }}
           type="submit"
-          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg transition"
+          disabled={loading}
+          className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50"
         >
-          Send Message
+          {loading ? "Sending..." : "Send Message"}
         </motion.button>
       </form>
     </motion.div>

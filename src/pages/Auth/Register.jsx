@@ -3,27 +3,34 @@ import { useNavigate, Link } from "react-router-dom";
 import { useRegisterMutation } from "../../api/apiSlice";
 import { toast } from "react-toastify";
 import Footer from "../../components/Footer";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 
 export default function Register() {
   const navigate = useNavigate();
   const [register] = useRegisterMutation();
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
-      const res = await register({ username, email, password }).unwrap();
-
-      // Backend sends: "Registered successfully. Check email to activate account."
+      const res = await register(formData).unwrap();
       toast.success(res.message || "Registration successful! Check email to verify.");
-
       navigate("/auth/login");
     } catch (err) {
-      // backend returns { error: "FRONTEND_URL not set in settings." } or validation errors
       const message =
         err?.data?.error ||
         err?.data?.username?.[0] ||
@@ -57,28 +64,39 @@ export default function Register() {
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <input
                 type="text"
+                name="username"
                 placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                value={formData.username}
+                onChange={handleChange}
                 required
                 className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="email"
+                name="email"
                 placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={formData.email}
+                onChange={handleChange}
                 required
                 className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="px-4 py-2 border rounded w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
+                </span>
+              </div>
               <button
                 type="submit"
                 disabled={loading}

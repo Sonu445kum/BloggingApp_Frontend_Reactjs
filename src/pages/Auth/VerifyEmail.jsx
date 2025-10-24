@@ -2,57 +2,69 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
-export default function VerifyEmail() {
+export default function VerifyToken({
+  endpoint = "/api/auth/verify-email/",
+  successMessage = "Action completed successfully!",
+  redirectTo = "/auth/login",
+  loadingMessage = "Processing..."
+}) {
   const [loading, setLoading] = useState(true);
-  const [success, setSuccess] = useState(false);
+  const [status, setStatus] = useState({ success: false, message: "" });
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const verifyEmail = async () => {
+    const verify = async () => {
       const uid = searchParams.get("uid");
       const token = searchParams.get("token");
 
       if (!uid || !token) {
-        toast.error("Invalid verification link");
+        const msg = "Invalid or missing parameters!";
+        toast.error(msg);
+        setStatus({ success: false, message: msg });
         setLoading(false);
         return;
       }
 
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/auth/verify-email/?uid=${uid}&token=${token}`
+          `${import.meta.env.VITE_API_URL}${endpoint}?uid=${uid}&token=${token}`
         );
         const data = await res.json();
 
         if (res.ok) {
-          setSuccess(true);
-          toast.success(data.message || "Email verified successfully!");
-          setTimeout(() => navigate("/auth/login"), 3000); // Redirect to login
+          const msg = data.message || successMessage;
+          setStatus({ success: true, message: msg });
+          toast.success(msg);
+          setTimeout(() => navigate(redirectTo), 3000);
         } else {
-          toast.error(data.error || "Verification failed");
+          const msg = data.error || "Action failed!";
+          setStatus({ success: false, message: msg });
+          toast.error(msg);
         }
       } catch (err) {
-        toast.error("Something went wrong!");
+        const msg = "Something went wrong!";
+        setStatus({ success: false, message: msg });
+        toast.error(msg);
         console.error(err);
       } finally {
         setLoading(false);
       }
     };
 
-    verifyEmail();
-  }, [searchParams, navigate]);
+    verify();
+  }, [searchParams, navigate, endpoint, successMessage, redirectTo]);
+
+  const renderMessage = () => {
+    if (loading) return <p className="text-blue-600">{loadingMessage}</p>;
+    if (status.success) return <p className="text-green-600">{status.message} Redirecting...</p>;
+    return <p className="text-red-600">{status.message}</p>;
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md text-center">
-        {loading && <p className="text-blue-600">Verifying your email...</p>}
-        {!loading && success && (
-          <p className="text-green-600">Email verified successfully! Redirecting to login...</p>
-        )}
-        {!loading && !success && (
-          <p className="text-red-600">Email verification failed. Please try again.</p>
-        )}
+        {renderMessage()}
       </div>
     </div>
   );
