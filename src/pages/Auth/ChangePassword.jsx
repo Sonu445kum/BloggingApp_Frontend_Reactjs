@@ -65,7 +65,7 @@ export default function ChangePassword() {
         <button
           type="submit"
           disabled={loading}
-          className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
         >
           {loading ? "Changing..." : "Change Password"}
         </button>
