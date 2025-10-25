@@ -3,9 +3,12 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const AdminRoute = () => {
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role'); // set role during login if backend provides
+  const role = localStorage.getItem('role');
 
-  return token && role === 'Admin' ? <Outlet /> : <Navigate to="/auth/login" />;
+  // Case-insensitive check
+  const isAdmin = role && role.toLowerCase() === 'admin';
+
+  return token && isAdmin ? <Outlet /> : <Navigate to="/auth/login" />;
 };
 
 export default AdminRoute;

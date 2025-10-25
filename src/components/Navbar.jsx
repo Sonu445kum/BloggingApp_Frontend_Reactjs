@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Sun, Moon, User, LogOut, Settings, Menu, X } from "lucide-react";
@@ -13,16 +13,21 @@ export default function Navbar() {
   const [suggestions, setSuggestions] = useState([]);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const token = localStorage.getItem("token"); // check if user logged in
+  const token = localStorage.getItem("token");
+  const role = localStorage.getItem("role"); // "admin" or "user"
 
-  const links = useMemo(() => [
-    { name: "Home", path: "/" },
-    { name: "Blogs", path: "/blogs" },
-    { name: "About", path: "/about" },
-    { name: "Contact", path: "/contact" },
-  ], []);
+  const links = useMemo(
+    () => [
+      { name: "Home", path: "/" },
+      { name: "Blogs", path: "/blogs" },
+      { name: "About", path: "/about" },
+      { name: "Contact", path: "/contact" },
+    ],
+    []
+  );
 
   const { data: blogs = [] } = useGetBlogsQuery();
+  const stableBlogs = useMemo(() => blogs, [blogs]); // prevent re-renders
   const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
   // Theme toggle
@@ -37,23 +42,14 @@ export default function Navbar() {
     else document.documentElement.classList.remove("dark");
   }, [theme]);
 
-  // Live suggestions
+  // Live search suggestions
   useEffect(() => {
-    if (!debouncedSearchTerm) {
-      if (suggestions.length > 0) setSuggestions([]);
-      return;
-    }
-
-    const matched = blogs
-      .filter((blog) =>
-        blog.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      )
+    if (!debouncedSearchTerm) return setSuggestions([]);
+    const matched = stableBlogs
+      .filter((blog) => blog.title.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
       .slice(0, 5);
-
-    if (JSON.stringify(matched) !== JSON.stringify(suggestions)) {
-      setSuggestions(matched);
-    }
-  }, [debouncedSearchTerm, blogs, suggestions]);
+    setSuggestions(matched);
+  }, [debouncedSearchTerm, stableBlogs]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -74,12 +70,16 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("username"); // optional
     navigate("/");
   };
+
+  const username = localStorage.getItem("username") || "User";
 
   return (
     <nav className="bg-gray-800 dark:bg-gray-900 border-b border-gray-700 dark:border-gray-700 sticky top-0 z-50 shadow-md">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        {/* Logo */}
         <Link
           to="/"
           className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 hover:scale-105 transition-transform"
@@ -157,15 +157,17 @@ export default function Navbar() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
-                    className="absolute right-0 mt-3 w-40 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-md overflow-hidden"
+                    className="absolute right-0 mt-3 w-44 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-md overflow-hidden"
                   >
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center px-4 py-2 text-gray-200 hover:bg-gray-700"
-                      onClick={() => setShowDropdown(false)}
-                    >
-                      <Settings size={16} className="mr-2" /> Dashboard
-                    </Link>
+                    {role === "admin" && (
+                      <Link
+                        to="/dashboard"
+                        className="flex items-center px-4 py-2 text-gray-200 hover:bg-gray-700"
+                        onClick={() => setShowDropdown(false)}
+                      >
+                        <Settings size={16} className="mr-2" /> Dashboard
+                      </Link>
+                    )}
                     <Link
                       to="/profile"
                       className="flex items-center px-4 py-2 text-gray-200 hover:bg-gray-700"
@@ -193,7 +195,10 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         <div className="md:hidden relative">
-          <button onClick={() => setMenuOpen(!menuOpen)} className="p-2 rounded-md text-gray-200 hover:text-yellow-500 transition">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 rounded-md text-gray-200 hover:text-yellow-500 transition"
+          >
             {menuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
 
@@ -251,13 +256,15 @@ export default function Navbar() {
                 {/* Mobile Auth Dropdown */}
                 {token && (
                   <div className="mt-4 border-t border-gray-700 pt-2">
-                    <Link
-                      to="/dashboard"
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
-                    >
-                      Dashboard
-                    </Link>
+                    {role === "admin" && (
+                      <Link
+                        to="/dashboard"
+                        onClick={() => setMenuOpen(false)}
+                        className="block px-4 py-2 text-gray-200 hover:bg-gray-700"
+                      >
+                        Dashboard
+                      </Link>
+                    )}
                     <Link
                       to="/profile"
                       onClick={() => setMenuOpen(false)}

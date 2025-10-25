@@ -57,7 +57,7 @@ export default function Register() {
             <div className="absolute inset-0 bg-black/50"></div>
           </div>
 
-          <div className="relative w-full max-w-md bg-white p-8 rounded-xl shadow-2xl backdrop-blur-sm z-10">
+          <div className="relative w-full max-w-md bg-white p-8 rounded-xl shadow-2xl z-10">
             <h2 className="text-2xl font-bold mb-6 text-center">
               Create an Account
             </h2>

@@ -1,16 +1,22 @@
 // src/api/apiSlice.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// 🌍 Base URL setup from .env
-const BASE_URL = import.meta.env.VITE_API_URL?.endsWith("/")
-  ? `${import.meta.env.VITE_API_URL}api/`
-  : `${import.meta.env.VITE_API_URL}/api/`;
+/* ==========================
+   🌐 BASE URL CONFIG
+========================== */
+const rawUrl = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"; // fallback
 
+// Ensure exactly ONE slash between base and "api"
+const BASE_URL = rawUrl.replace(/\/+$/, "") + "/api";
+
+/* ==========================
+   ⚡ RTK QUERY API SLICE
+========================== */
 export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
     baseUrl: BASE_URL,
-    credentials: "include", //  handles cookies/CSRF if backend uses them
+    credentials: "include", // handle cookies & CSRF if backend uses
     prepareHeaders: (headers) => {
       try {
         const token = localStorage.getItem("token");
@@ -29,27 +35,52 @@ export const apiSlice = createApi({
     "Category",
     "Comment",
     "Notification",
-    "Bookmark",
     "Profile",
     "Stats",
   ],
   endpoints: (builder) => ({
     /* ==========================
-       🔐 AUTHENTICATION
+       🔐 AUTHENTICATION ENDPOINTS
     ========================== */
     login: builder.mutation({
-      query: (data) => ({ url: "auth/login/", method: "POST", body: data }),
-    }),
-    register: builder.mutation({
-      query: (data) => ({ url: "auth/register/", method: "POST", body: data }),
-    }),
-    forgotPassword: builder.mutation({
       query: (data) => ({
-        url: "auth/request-password-reset/",
+        url: "auth/login/",
         method: "POST",
         body: data,
       }),
     }),
+    register: builder.mutation({
+      query: (data) => ({
+        url: "auth/register/",
+        method: "POST",
+        body: data,
+        headers: { "Content-Type": "application/json" },
+      }),
+    }),
+    forgotPassword: builder.mutation({
+  query: (data) => ({
+    url: "auth/request-password-reset/",
+    method: "POST",
+    body: data,
+  }),
+}),
+
+verifyEmail: builder.mutation({
+      query: ({ uid, token }) => ({
+        url: "auth/verify-email/",
+        method: "POST",
+        body: { uid, token },
+        headers: { "Content-Type": "application/json" },
+      }),
+    }),
+
+// Optional: If you prefer GET
+    verifyEmailGet: builder.query({
+      query: ({ uid, token }) =>
+        `auth/verify-email/?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`,
+    }),
+  
+
     resetPassword: builder.mutation({
       query: (data) => ({
         url: "auth/reset-password/",
@@ -70,7 +101,7 @@ export const apiSlice = createApi({
     }),
 
     /* ==========================
-       🧑‍💻 PROFILE
+       🧑‍💻 PROFILE ENDPOINTS
     ========================== */
     getProfile: builder.query({
       query: () => "profile/",
@@ -87,7 +118,7 @@ export const apiSlice = createApi({
     getStats: builder.query({ query: () => "stats/", providesTags: ["Stats"] }),
 
     /* ==========================
-       📝 BLOGS CRUD
+       📝 BLOGS CRUD ENDPOINTS
     ========================== */
     getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
     getBlog: builder.query({
@@ -123,7 +154,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
 
-     /* ==========================
+    /* ==========================
        📸 BLOG MEDIA UPLOAD
     ========================== */
     uploadBlogMedia: builder.mutation({
@@ -135,8 +166,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
 
-
-     /* ==========================
+    /* ==========================
        🏷️ CATEGORIES
     ========================== */
     getCategories: builder.query({
@@ -159,10 +189,16 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Category"],
     }),
-
+    deleteCategory: builder.mutation({
+      query: (categoryId) => ({
+        url: `admin/categories/${categoryId}/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Category"],
+    }),
 
     /* ==========================
-        😍 REACTIONS
+       😍 REACTIONS
     ========================== */
     toggleReaction: builder.mutation({
       query: ({ blogId, reactionType }) => ({
@@ -171,6 +207,13 @@ export const apiSlice = createApi({
         body: { reaction_type: reactionType },
       }),
       invalidatesTags: ["Blog"],
+    }),
+    getAllReactions: builder.query({ query: () => "admin/reactions/" }),
+    deleteReaction: builder.mutation({
+      query: (id) => ({
+        url: `admin/reactions/${id}/`,
+        method: "DELETE",
+      }),
     }),
 
     /* ==========================
@@ -191,6 +234,13 @@ export const apiSlice = createApi({
     deleteComment: builder.mutation({
       query: (id) => ({ url: `comments/${id}/delete/`, method: "DELETE" }),
       invalidatesTags: ["Comment", "Blog"],
+    }),
+    approveComment: builder.mutation({
+      query: (commentId) => ({
+        url: `comments/${commentId}/approve/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Comment"],
     }),
 
     /* ==========================
@@ -217,31 +267,34 @@ export const apiSlice = createApi({
     }),
 
     /* ==========================
-       👑 ADMIN PANEL
+       🏛️ ADMIN DASHBOARD
     ========================== */
-    getUsers: builder.query({
-      query: () => "admin/users/",
-      providesTags: ["User"],
+    getDashboardStats: builder.query({
+      query: () => "admin/dashboard/",
+      providesTags: ["Stats"],
     }),
-    getUser: builder.query({
-      query: (id) => `admin/users/${id}/`,
-      providesTags: ["User"],
-    }),
+    getUsers: builder.query({ query: () => "admin/users/", providesTags: ["User"] }),
+    getUser: builder.query({ query: (id) => `admin/users/${id}/`, providesTags: ["User"] }),
     updateUserRole: builder.mutation({
       query: ({ userId, role }) => ({
         url: `admin/users/${userId}/update-role/`,
-        method: "PUT",
+        method: "POST",
         body: { role },
       }),
       invalidatesTags: ["User"],
     }),
-    mostActiveUsers: builder.query({
-      query: () => "admin/most-active-users/",
-      providesTags: ["User"],
+
+    getAllComments: builder.query({ query: () => "admin/comments/", providesTags: ["Comment"] }),
+    getAllNotifications: builder.query({ query: () => "admin/notifications/", providesTags: ["Notification"] }),
+    mostActiveUsers: builder.query({ query: () => "admin/most-active-users/", providesTags: ["User"] }),
+    getTrendingBlogs: builder.query({ query: () => "admin/trending-blogs/", providesTags: ["Blog"] }),
+    approveBlog: builder.mutation({
+      query: (blogId) => ({ url: `blogs/${blogId}/approve/`, method: "POST" }),
+      invalidatesTags: ["Blog"],
     }),
-    trendingBlogsAdmin: builder.query({
-      query: () => "admin/trending-blogs/",
-      providesTags: ["Blog"],
+    flagBlog: builder.mutation({
+      query: (blogId) => ({ url: `blogs/${blogId}/flag/`, method: "POST" }),
+      invalidatesTags: ["Blog"],
     }),
   }),
 });
@@ -252,6 +305,8 @@ export const apiSlice = createApi({
 export const {
   useLoginMutation,
   useRegisterMutation,
+  useVerifyEmailMutation,
+  useVerifyEmailGetQuery,
   useForgotPasswordMutation,
   useResetPasswordMutation,
   useChangePasswordMutation,
@@ -267,19 +322,29 @@ export const {
   useDeleteBlogMutation,
   useUploadBlogMediaMutation,
   useToggleReactionMutation,
+  useGetAllReactionsQuery,
+  useDeleteReactionMutation,
+  useAddCategoryMutation,
   useGetCategoriesQuery,
   useCreateCategoryMutation,
   useUpdateDeleteCategoryMutation,
+  useDeleteCategoryMutation,
+  useApproveCommentMutation,
   useGetCommentsQuery,
   useAddCommentMutation,
+  useGetAllCommentsQuery,
   useDeleteCommentMutation,
   useGetNotificationsQuery,
+  useGetAllNotificationsQuery,
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
   useDeleteNotificationMutation,
+  useGetDashboardStatsQuery,
+  useMostActiveUsersQuery,
+  useGetTrendingBlogsQuery,
   useGetUsersQuery,
   useGetUserQuery,
   useUpdateUserRoleMutation,
-  useMostActiveUsersQuery,
-  useTrendingBlogsAdminQuery,
+  useApproveBlogMutation,
+  useFlagBlogMutation,
 } = apiSlice;
