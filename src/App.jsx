@@ -43,6 +43,7 @@ import ReactionsManagement from "./pages/Admin/ReactionsManagement"; // new
 // Profile Pages
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
+import EditUserModal from "./pages/Admin/Users/EditUserModal";
 
 // ---------------- Layout wrapper for Navbar + Footer ----------------
 const Layout = ({ children }) => {
@@ -113,6 +114,7 @@ const AppContent = () => {
           <Route path="/admin/comments" element={<CommentsManagement />} />
           <Route path="/admin/notifications" element={<NotificationsManagement />} />
           <Route path="/admin/reactions" element={<ReactionsManagement />} />
+          <Route path="/admin/users/edit/:id" element={<EditUserModal />} />
         </Route>
       </Route>
     </Routes>

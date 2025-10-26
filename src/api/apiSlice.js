@@ -354,6 +354,42 @@ export const apiSlice = createApi({
     /* ==========================
        🏛️ ADMIN DASHBOARD
     ========================== */
+    // 1️ Get all users
+    getUsers: builder.query({
+      query: () => "/users",
+      providesTags: ["Users"], // automatically re-fetch after mutation
+    }),
+
+    // 2️ Update user (role, email, username)
+    updateUserRole: builder.mutation({
+      query: ({ userId, ...data }) => ({
+        url: `/users/${userId}/update`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Users"], // refresh users list after update
+    }),
+
+    // 3️ Create new user
+    createUser: builder.mutation({
+      query: (newUser) => ({
+        url: "/users/create",
+        method: "POST",
+        body: newUser,
+      }),
+      invalidatesTags: ["Users"], // refresh users list after creation
+    }),
+
+    // 4️ Delete user
+     deleteUser: builder.mutation({
+      query: (userId) => ({
+        url: `/users/${userId}/delete/`, //  make sure it ends with /delete/
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Users"],
+    }),
+
+
     getDashboardStats: builder.query({
       query: () => "admin/dashboard/",
       providesTags: ["Stats"],
@@ -457,4 +493,8 @@ export const {
   useApproveBlogMutation,
   useFlagBlogMutation,
   useGetBlogsPerCategoryQuery,
+
+ 
+  useCreateUserMutation,
+  useDeleteUserMutation,
 } = apiSlice;
