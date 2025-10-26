@@ -336,7 +336,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["Notifications"],
     }),
 
-
     // Fetch all reactions
     getAllReactions: builder.query({
       query: () => "/api/admin/reactions/",
@@ -380,15 +379,33 @@ export const apiSlice = createApi({
       invalidatesTags: ["Users"], // refresh users list after creation
     }),
 
-    // 4️ Delete user
-     deleteUser: builder.mutation({
+    // Add new user
+    addUser: builder.mutation({
+      query: (user) => ({
+        url: "users/add/",
+        method: "POST",
+        body: user,
+      }),
+      invalidatesTags: ["Users"],
+    }),
+    // delete user
+    deleteUser: builder.mutation({
       query: (userId) => ({
-        url: `/users/${userId}/delete/`, //  make sure it ends with /delete/
+        url: `api/users/${userId}/delete/`,
         method: "DELETE",
       }),
       invalidatesTags: ["Users"],
     }),
 
+    // update user
+    updateUser: builder.mutation({
+      query: ({ userId, data }) => ({
+        url: `users/${userId}/update/`,
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Users"],
+    }),
 
     getDashboardStats: builder.query({
       query: () => "admin/dashboard/",
@@ -493,8 +510,8 @@ export const {
   useApproveBlogMutation,
   useFlagBlogMutation,
   useGetBlogsPerCategoryQuery,
-
- 
+  useUpdateUserMutation,
   useCreateUserMutation,
   useDeleteUserMutation,
+  useAddUserMutation,
 } = apiSlice;
