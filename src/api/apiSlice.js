@@ -325,6 +325,21 @@ export const apiSlice = createApi({
       invalidatesTags: ["Notifications"],
     }),
 
+
+    // Fetch all reactions
+    getAllReactions: builder.query({
+      query: () => "/api/admin/reactions/",
+      providesTags: ["Reactions"],
+    }),
+    // Delete a reaction
+    deleteReaction: builder.mutation({
+      query: (id) => ({
+        url: `/api/admin/reactions/${id}/delete/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Reactions"],
+    }),
+
     /* ==========================
        🏛️ ADMIN DASHBOARD
     ========================== */
