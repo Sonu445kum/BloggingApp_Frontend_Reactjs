@@ -80,7 +80,7 @@ export default function Navbar() {
           to="/"
           className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600 hover:scale-105 transition-transform"
         >
-          MyBlogApp
+          SonuBlogApp
         </Link>
 
         {/* Desktop Menu */}

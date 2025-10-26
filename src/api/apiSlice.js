@@ -364,6 +364,10 @@ export const apiSlice = createApi({
       invalidatesTags: ["User"],
     }),
 
+    getDashboardStats: builder.query({
+      query: () => "/api/admin/dashboard-stats/",
+    }),
+
     getAllComments: builder.query({
       query: () => "admin/comments/",
       providesTags: ["Comment"],

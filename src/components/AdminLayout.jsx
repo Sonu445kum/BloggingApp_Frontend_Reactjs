@@ -1,91 +1,139 @@
 import React, { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { Outlet, NavLink } from "react-router-dom";
+import {
+  Home,
+  Users,
+  FileText,
+  Tag,
+  MessageCircle,
+  Bell,
+  Heart,
+} from "lucide-react";
+import { useGetDashboardStatsQuery } from "../api/apiSlice";
 
-const SidebarLink = ({ to, label }) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) =>
-      `block px-4 py-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 ${
-        isActive ? "bg-gray-300 dark:bg-gray-800 font-bold" : ""
-      }`
-    }
-  >
-    {label}
-  </NavLink>
+// Sidebar Link Component
+const SidebarLink = ({ to, label, icon: Icon, badge, sidebarOpen }) => (
+  <div className="group relative">
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+          isActive
+            ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md font-semibold"
+            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:translate-x-1"
+        }`
+      }
+    >
+      {Icon && <Icon className="w-5 h-5" />}
+      {sidebarOpen && <span className="flex-1">{label}</span>}
+      {badge && sidebarOpen && (
+        <span className="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full animate-pulse">
+          {badge}
+        </span>
+      )}
+    </NavLink>
+
+    {/* Tooltip for collapsed sidebar */}
+    {!sidebarOpen && (
+      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-3 py-1 bg-gray-800 text-white rounded shadow-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm whitespace-nowrap">
+        {label}
+      </div>
+    )}
+  </div>
 );
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const navigate = useNavigate();
+  const { data: stats } = useGetDashboardStatsQuery();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
-    toast.success("Logged out successfully");
-    navigate("/");
+  const badges = {
+    users: stats?.users || 0,
+    blogs: stats?.blogs || 0,
+    categories: stats?.categories || 0,
+    comments: stats?.comments || 0,
+    notifications: stats?.notifications || 0,
+    reactions: stats?.reactions || 0,
   };
 
-  const username = localStorage.getItem("username") || "Admin";
-
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="flex min-h-screen">
       {/* Sidebar */}
       <div
-        className={`bg-white dark:bg-gray-800 shadow h-screen transition-all ${
-          sidebarOpen ? "w-64" : "w-16"
-        }`}
+        className={`flex flex-col h-screen transition-all duration-300 ${
+          sidebarOpen ? "w-64" : "w-20"
+        } bg-gradient-to-b from-indigo-50 via-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg`}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 className={`font-bold text-lg ${!sidebarOpen ? "hidden" : ""}`}>Admin Panel</h2>
-          <button
-            className="text-gray-600 dark:text-gray-300"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            {sidebarOpen ? "◀" : "▶"}
-          </button>
-        </div>
+        {/* Header */}
+        {sidebarOpen && (
+          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+            <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+              Admin Dashboard
+            </h1>
+          </div>
+        )}
 
-        <nav className="mt-4">
-          <SidebarLink to="/admin/dashboard" label="Dashboard" />
-          <SidebarLink to="/admin/users" label="Users Management" />
-          <SidebarLink to="/admin/blogs" label="Blogs Management" />
-          <SidebarLink to="/admin/categories" label="Categories Management" />
-          <SidebarLink to="/admin/comments" label="Comments Management" />
-          <SidebarLink to="/admin/notifications" label="Notifications Management" />
-          <SidebarLink to="/admin/reactions" label="Reactions Management" />
+        {/* Sidebar Links */}
+        <nav className="mt-4 flex-1 space-y-1 px-1">
+          <SidebarLink
+            to="/admin/dashboard"
+            label="Dashboard"
+            icon={Home}
+            sidebarOpen={sidebarOpen}
+          />
+          <SidebarLink
+            to="/admin/users"
+            label="Users"
+            icon={Users}
+            badge={badges.users}
+            sidebarOpen={sidebarOpen}
+          />
+          <SidebarLink
+            to="/admin/blogs"
+            label="Blogs"
+            icon={FileText}
+            badge={badges.blogs}
+            sidebarOpen={sidebarOpen}
+          />
+          <SidebarLink
+            to="/admin/categories"
+            label="Categories"
+            icon={Tag}
+            badge={badges.categories}
+            sidebarOpen={sidebarOpen}
+          />
+          <SidebarLink
+            to="/admin/comments"
+            label="Comments"
+            icon={MessageCircle}
+            badge={badges.comments}
+            sidebarOpen={sidebarOpen}
+          />
+          <SidebarLink
+            to="/admin/notifications"
+            label="Notifications"
+            icon={Bell}
+            badge={badges.notifications}
+            sidebarOpen={sidebarOpen}
+          />
+          <SidebarLink
+            to="/admin/reactions"
+            label="Reactions"
+            icon={Heart}
+            badge={badges.reactions}
+            sidebarOpen={sidebarOpen}
+          />
         </nav>
+
+        {/* Footer */}
+        {sidebarOpen && (
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 text-sm text-gray-500">
+            &copy; 2025 SonuBlogApp
+          </div>
+        )}
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Topbar */}
-        <div className="flex justify-end items-center bg-white dark:bg-gray-800 shadow px-4 py-3">
-          <div className="relative inline-block text-left">
-            <button
-              className="flex items-center gap-2 px-3 py-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
-              id="menu-button"
-            >
-              {username} ▼
-            </button>
-            <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 shadow rounded z-50">
-              <button
-                className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
-                onClick={() => navigate("/profile")}
-              >
-                Profile
-              </button>
-              <button
-                className="block w-full text-left px-4 py-2 hover:bg-gray-200 dark:hover:bg-gray-700"
-                onClick={handleLogout}
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Content */}
+      <div className="flex-1 flex flex-col bg-gray-50 dark:bg-gray-900">
         <div className="flex-1 p-6 overflow-auto">
           <Outlet />
         </div>
