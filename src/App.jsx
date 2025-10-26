@@ -52,12 +52,13 @@ const Layout = ({ children }) => {
     "/auth/login",
     "/auth/register",
     "/auth/forgot-password",
-     "/reset-password",
+    "/reset-password",
     "/auth/reset-password",
     "/auth/verify-email",
+    "/verify-email",
   ];
 
-  const shouldHideFooter = hideFooterPaths.includes(location.pathname);
+  const shouldHideFooter = hideFooterPaths.includes(location.pathname.toLowerCase());
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
@@ -68,10 +69,8 @@ const Layout = ({ children }) => {
   );
 };
 
-// ---------------- AppContent: Handles protected routing ----------------
+// ---------------- AppContent: Handles routing ----------------
 const AppContent = () => {
-  const token = localStorage.getItem("token"); // purely localStorage-based
-
   return (
     <Routes>
       {/* Public Pages */}
@@ -96,18 +95,16 @@ const AppContent = () => {
       <Route path="/verify-email" element={<VerifyEmail />} />
 
       {/* Profile Pages */}
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/profile/edit" element={<ProfileEdit />} />
-
-      {/* Protected Routes for authenticated users */}
-      <Route element={token ? <ProtectedRoute /> : null}>
+      <Route element={<ProtectedRoute />}>
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/edit" element={<ProfileEdit />} />
         <Route path="/auth/change-password" element={<ChangePassword />} />
         <Route path="/blogs/create" element={<BlogCreate />} />
         <Route path="/blogs/edit/:id" element={<BlogEdit />} />
       </Route>
 
       {/* Admin Routes with AdminLayout */}
-      <Route element={token ? <AdminRoute /> : null}>
+      <Route element={<AdminRoute />}>
         <Route element={<AdminLayout />}>
           <Route path="/admin/dashboard" element={<Dashboard />} />
           <Route path="/admin/users" element={<UsersManagement />} />

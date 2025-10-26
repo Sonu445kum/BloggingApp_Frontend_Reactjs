@@ -3,12 +3,10 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const AdminRoute = () => {
   const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const user = JSON.parse(localStorage.getItem('user') || '{}'); // <--- define user
+  const isAdmin = user?.is_admin;
 
-  // Case-insensitive check
-  const isAdmin = role && role.toLowerCase() === 'admin';
-
-  return token && isAdmin ? <Outlet /> : <Navigate to="/auth/login" />;
+  return token && isAdmin ? <Outlet /> : <Navigate to="/auth/login" replace />;
 };
 
 export default AdminRoute;

@@ -58,14 +58,14 @@ export const apiSlice = createApi({
       }),
     }),
     forgotPassword: builder.mutation({
-  query: (data) => ({
-    url: "auth/request-password-reset/",
-    method: "POST",
-    body: data,
-  }),
-}),
+      query: (data) => ({
+        url: "auth/request-password-reset/",
+        method: "POST",
+        body: data,
+      }),
+    }),
 
-verifyEmail: builder.mutation({
+    verifyEmail: builder.mutation({
       query: ({ uid, token }) => ({
         url: "auth/verify-email/",
         method: "POST",
@@ -74,12 +74,13 @@ verifyEmail: builder.mutation({
       }),
     }),
 
-// Optional: If you prefer GET
+    // Optional: If you prefer GET
     verifyEmailGet: builder.query({
       query: ({ uid, token }) =>
-        `auth/verify-email/?uid=${encodeURIComponent(uid)}&token=${encodeURIComponent(token)}`,
+        `auth/verify-email/?uid=${encodeURIComponent(
+          uid
+        )}&token=${encodeURIComponent(token)}`,
     }),
-  
 
     resetPassword: builder.mutation({
       query: (data) => ({
@@ -172,6 +173,16 @@ verifyEmail: builder.mutation({
     getCategories: builder.query({
       query: () => "categories/",
       providesTags: ["Category"],
+      // Transform response so it always returns an array
+      transformResponse: (response) => {
+        // If your API returns { results: [...] } or { categories: [...] }
+        if (response.results) return response.results;
+        if (response.categories) return response.categories;
+        // fallback: if API returns array directly
+        if (Array.isArray(response)) return response;
+        // otherwise return empty array
+        return [];
+      },
     }),
     createCategory: builder.mutation({
       query: (data) => ({
@@ -191,7 +202,7 @@ verifyEmail: builder.mutation({
     }),
     deleteCategory: builder.mutation({
       query: (categoryId) => ({
-        url: `admin/categories/${categoryId}/`,
+        url: `categories/${categoryId}/`,
         method: "DELETE",
       }),
       invalidatesTags: ["Category"],
@@ -243,6 +254,30 @@ verifyEmail: builder.mutation({
       invalidatesTags: ["Comment"],
     }),
 
+    // admin comments
+    getAllComments: builder.query({
+      query: () => `/admin/comments/`,
+      providesTags: ["Comments"],
+    }),
+
+    /* 🔴 Delete comment (for user or admin) */
+    deleteComment: builder.mutation({
+      query: (id) => ({
+        url: `/comments/${id}/delete/`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Comments"],
+    }),
+
+    /* 🟡 Approve comment (Admin only) */
+    approveComment: builder.mutation({
+      query: (id) => ({
+        url: `/admin/comments/${id}/approve/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Comments"],
+    }),
+
     /* ==========================
        🔔 NOTIFICATIONS
     ========================== */
@@ -267,14 +302,44 @@ verifyEmail: builder.mutation({
     }),
 
     /* ==========================
+       🔔 NOTIFICATIONS (Admin)
+    =========================== */
+    getAdminNotifications: builder.query({
+      query: () => "/admin/notifications/",
+      providesTags: ["Notifications"],
+    }),
+
+    markNotificationRead: builder.mutation({
+      query: (id) => ({
+        url: `/admin/notifications/${id}/mark-read/`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
+
+    deleteAdminNotification: builder.mutation({
+      query: (id) => ({
+        url: `/admin/notifications/${id}/`, // remove /delete/ here
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Notifications"],
+    }),
+
+    /* ==========================
        🏛️ ADMIN DASHBOARD
     ========================== */
     getDashboardStats: builder.query({
       query: () => "admin/dashboard/",
       providesTags: ["Stats"],
     }),
-    getUsers: builder.query({ query: () => "admin/users/", providesTags: ["User"] }),
-    getUser: builder.query({ query: (id) => `admin/users/${id}/`, providesTags: ["User"] }),
+    getUsers: builder.query({
+      query: () => "admin/users/",
+      providesTags: ["User"],
+    }),
+    getUser: builder.query({
+      query: (id) => `admin/users/${id}/`,
+      providesTags: ["User"],
+    }),
     updateUserRole: builder.mutation({
       query: ({ userId, role }) => ({
         url: `admin/users/${userId}/update-role/`,
@@ -284,10 +349,22 @@ verifyEmail: builder.mutation({
       invalidatesTags: ["User"],
     }),
 
-    getAllComments: builder.query({ query: () => "admin/comments/", providesTags: ["Comment"] }),
-    getAllNotifications: builder.query({ query: () => "admin/notifications/", providesTags: ["Notification"] }),
-    mostActiveUsers: builder.query({ query: () => "admin/most-active-users/", providesTags: ["User"] }),
-    getTrendingBlogs: builder.query({ query: () => "admin/trending-blogs/", providesTags: ["Blog"] }),
+    getAllComments: builder.query({
+      query: () => "admin/comments/",
+      providesTags: ["Comment"],
+    }),
+    getAllNotifications: builder.query({
+      query: () => "admin/notifications/",
+      providesTags: ["Notification"],
+    }),
+    mostActiveUsers: builder.query({
+      query: () => "admin/most-active-users/",
+      providesTags: ["User"],
+    }),
+    getTrendingBlogs: builder.query({
+      query: () => "admin/trending-blogs/",
+      providesTags: ["Blog"],
+    }),
     approveBlog: builder.mutation({
       query: (blogId) => ({ url: `blogs/${blogId}/approve/`, method: "POST" }),
       invalidatesTags: ["Blog"],
@@ -300,7 +377,7 @@ verifyEmail: builder.mutation({
 });
 
 /* ==========================
-   ✅ EXPORT HOOKS
+    EXPORT HOOKS
 ========================= */
 export const {
   useLoginMutation,
@@ -324,9 +401,9 @@ export const {
   useToggleReactionMutation,
   useGetAllReactionsQuery,
   useDeleteReactionMutation,
-  useAddCategoryMutation,
-  useGetCategoriesQuery,
   useCreateCategoryMutation,
+  useGetCategoriesQuery,
+  useAddCategoryMutation,
   useUpdateDeleteCategoryMutation,
   useDeleteCategoryMutation,
   useApproveCommentMutation,
@@ -339,6 +416,8 @@ export const {
   useMarkNotificationReadMutation,
   useMarkAllNotificationsReadMutation,
   useDeleteNotificationMutation,
+  useGetAdminNotificationsQuery,
+  useDeleteAdminNotificationMutation,
   useGetDashboardStatsQuery,
   useMostActiveUsersQuery,
   useGetTrendingBlogsQuery,

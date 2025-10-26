@@ -13,7 +13,12 @@ const BlogsManagement = () => {
   const [flagBlog] = useFlagBlogMutation();
   const [loadingBlogId, setLoadingBlogId] = useState(null);
 
-  if (isLoading) return <p>Loading blogs...</p>;
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-700 font-semibold text-xl">
+        Loading blogs...
+      </div>
+    );
 
   const handleApprove = async (blogId) => {
     try {
@@ -42,42 +47,56 @@ const BlogsManagement = () => {
   };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Blogs Management</h1>
+    <div className="min-h-screen p-8 bg-gradient-to-b from-gray-100 to-gray-200">
+      <h1 className="text-4xl font-bold mb-8 text-gray-800">Blogs Management</h1>
+
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white shadow rounded-lg overflow-hidden">
-          <thead className="bg-gray-200">
+        <table className="min-w-full bg-white shadow-lg rounded-xl overflow-hidden">
+          <thead className="bg-indigo-500 text-white">
             <tr>
-              <th className="py-2 px-4 text-left">ID</th>
-              <th className="py-2 px-4 text-left">Title</th>
-              <th className="py-2 px-4 text-left">Author</th>
-              <th className="py-2 px-4 text-left">Views</th>
-              <th className="py-2 px-4 text-left">Status</th>
-              <th className="py-2 px-4 text-left">Actions</th>
+              <th className="py-3 px-6 text-left">ID</th>
+              <th className="py-3 px-6 text-left">Title</th>
+              <th className="py-3 px-6 text-left">Author</th>
+              <th className="py-3 px-6 text-left">Views</th>
+              <th className="py-3 px-6 text-left">Status</th>
+              <th className="py-3 px-6 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {blogs.map((blog) => (
-              <tr key={blog.id} className="border-b hover:bg-gray-50">
-                <td className="py-2 px-4">{blog.id}</td>
-                <td className="py-2 px-4">{blog.title}</td>
-                <td className="py-2 px-4">{blog.author.username}</td>
-                <td className="py-2 px-4">{blog.views}</td>
-                <td className="py-2 px-4">{blog.status}</td>
-                <td className="py-2 px-4 flex gap-2">
+            {(blogs || []).map((blog) => (
+              <tr
+                key={blog.id}
+                className="border-b hover:bg-gray-50 transition-colors duration-200"
+              >
+                <td className="py-3 px-6 font-medium text-gray-700">{blog.id}</td>
+                <td className="py-3 px-6 font-medium text-gray-800">
+                  {blog.title ?? "Untitled"}
+                </td>
+                <td className="py-3 px-6 text-gray-600">
+                  {blog.author?.username ?? "Unknown"}
+                </td>
+                <td className="py-3 px-6 text-gray-600">{blog.views ?? 0}</td>
+                <td className="py-3 px-6 font-medium text-gray-700">
+                  {blog.status ?? "pending"}
+                </td>
+                <td className="py-3 px-6 flex gap-2">
                   <button
-                    className="bg-green-500 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="bg-green-500 hover:bg-green-600 text-white px-4 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     onClick={() => handleApprove(blog.id)}
                     disabled={loadingBlogId === blog.id || blog.status === "published"}
                   >
-                    Approve
+                    {loadingBlogId === blog.id && blog.status !== "published"
+                      ? "Processing..."
+                      : "Approve"}
                   </button>
                   <button
-                    className="bg-red-500 text-white px-3 py-1 rounded disabled:opacity-50"
+                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-1 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     onClick={() => handleFlag(blog.id)}
                     disabled={loadingBlogId === blog.id || blog.is_flagged}
                   >
-                    Flag
+                    {loadingBlogId === blog.id && blog.is_flagged !== true
+                      ? "Processing..."
+                      : "Flag"}
                   </button>
                 </td>
               </tr>

@@ -8,7 +8,7 @@ const ProtectedRoute = () => {
   return token ? (
     <Outlet />
   ) : (
-    <Navigate to="/auth/login" state={{ redirect: location.pathname }} replace />
+    <Navigate to="/auth/login/" state={{ redirect: location.pathname }} replace />
   );
 };
 
