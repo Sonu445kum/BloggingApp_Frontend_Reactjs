@@ -167,6 +167,17 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
 
+    // blogs active tranding
+    getBlogsPerCategory: builder.query({
+      query: () => "blogs/category-stats/",
+    }),
+    getMostActiveUsers: builder.query({
+      query: () => "users/most-active/",
+    }),
+    getTrendingBlogs: builder.query({
+      query: () => "blogs/trending/",
+    }),
+
     /* ==========================
        🏷️ CATEGORIES
     ========================== */
@@ -445,4 +456,5 @@ export const {
   useUpdateUserRoleMutation,
   useApproveBlogMutation,
   useFlagBlogMutation,
+  useGetBlogsPerCategoryQuery,
 } = apiSlice;

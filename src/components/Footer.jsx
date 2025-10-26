@@ -10,7 +10,7 @@ export default function Footer() {
     { icon: <FaFacebookF />, url: "https://facebook.com/yourprofile", label: "Facebook" },
     { icon: <FaInstagram />, url: "https://instagram.com/yourprofile", label: "Instagram" },
     { icon: <FaLinkedinIn />, url: "https://linkedin.com/in/yourprofile", label: "LinkedIn" },
-    { icon: <FaGithub />, url: "https://github.com/yourprofile", label: "GitHub" },
+    { icon: <FaGithub />, url: "https://github.com/Sonu445kum", label: "GitHub" },
   ];
 
   const quickLinks = ["Home", "Blogs", "Contact", "Privacy Policy"];

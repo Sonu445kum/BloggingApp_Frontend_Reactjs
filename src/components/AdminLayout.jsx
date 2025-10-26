@@ -8,7 +8,10 @@ import {
   MessageCircle,
   Bell,
   Heart,
+  Menu,
+  X,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useGetDashboardStatsQuery } from "../api/apiSlice";
 
 // Sidebar Link Component
@@ -17,19 +20,39 @@ const SidebarLink = ({ to, label, icon: Icon, badge, sidebarOpen }) => (
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+        `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 
+        ${
           isActive
-            ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md font-semibold"
+            ? "bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg font-semibold"
             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:translate-x-1"
         }`
       }
     >
-      {Icon && <Icon className="w-5 h-5" />}
+      {Icon && <Icon className="w-5 h-5 transition-colors duration-200" />}
       {sidebarOpen && <span className="flex-1">{label}</span>}
+
+      {/* Badge */}
       {badge && sidebarOpen && (
-        <span className="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full animate-pulse">
+        <motion.span
+          whileHover={{ scale: 1.2 }}
+          className={`ml-auto text-white text-xs font-semibold px-2 py-0.5 rounded-full transition-shadow duration-200 ${
+            label === "Users"
+              ? "bg-indigo-500"
+              : label === "Blogs"
+              ? "bg-purple-500"
+              : label === "Categories"
+              ? "bg-teal-500"
+              : label === "Comments"
+              ? "bg-yellow-500"
+              : label === "Notifications"
+              ? "bg-pink-500"
+              : label === "Reactions"
+              ? "bg-emerald-500"
+              : "bg-gray-500"
+          } shadow-md hover:shadow-lg`}
+        >
           {badge}
-        </span>
+        </motion.span>
       )}
     </NavLink>
 
@@ -64,13 +87,26 @@ const AdminLayout = () => {
         } bg-gradient-to-b from-indigo-50 via-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-lg`}
       >
         {/* Header */}
-        {sidebarOpen && (
-          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+          {sidebarOpen && (
             <h1 className="text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
               Admin Dashboard
             </h1>
-          </div>
-        )}
+          )}
+
+          {/* Toggle Button */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
+          >
+            <motion.div
+              animate={{ rotate: sidebarOpen ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </motion.div>
+          </button>
+        </div>
 
         {/* Sidebar Links */}
         <nav className="mt-4 flex-1 space-y-1 px-1">
