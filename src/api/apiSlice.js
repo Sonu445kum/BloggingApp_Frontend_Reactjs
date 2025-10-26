@@ -122,6 +122,10 @@ export const apiSlice = createApi({
        📝 BLOGS CRUD ENDPOINTS
     ========================== */
     getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
+    getAllBlogs: builder.query({
+      query: () => `/blogs/`,
+      providesTags: ["Blogs"],
+    }),
     getBlog: builder.query({
       query: (id) => `blogs/${id}/`,
       providesTags: ["Blog"],
@@ -135,15 +139,19 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
     updateBlog: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `blogs/${id}/update/`,
-        method: "PUT",
-        body: data,
-      }),
-      invalidatesTags: ["Blog"],
-    }),
+  query: ({ id, data }) => ({
+    url: `admin/blogs/${id}/update/`,
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+    body: data,
+  }),
+  invalidatesTags: ['Blog'],
+}),
     deleteBlog: builder.mutation({
-      query: (id) => ({ url: `blogs/${id}/delete/`, method: "DELETE" }),
+      query: (id) => ({ url: `admin/blogs/${id}/delete/`, method: "DELETE" }),
       invalidatesTags: ["Blog"],
     }),
     addToBlog: builder.mutation({
@@ -475,6 +483,7 @@ export const {
   useUpdateProfileMutation,
   useGetStatsQuery,
   useGetBlogsQuery,
+  useGetAllBlogsQuery,
   useGetBlogQuery,
   useAddToBlogMutation,
   useCreateBlogMutation,
