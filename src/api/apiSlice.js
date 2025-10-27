@@ -121,7 +121,11 @@ export const apiSlice = createApi({
     /* ==========================
        📝 BLOGS CRUD ENDPOINTS
     ========================== */
-    getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
+    // getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
+    getBlogs: builder.query({
+      query: (page = 1) => `blogs/?page=${page}`, //  Backend pagination support
+      providesTags: ["Blog"],
+    }),
     getAllBlogs: builder.query({
       query: () => `/blogs/`,
       providesTags: ["Blogs"],
@@ -139,17 +143,17 @@ export const apiSlice = createApi({
       invalidatesTags: ["Blog"],
     }),
     updateBlog: builder.mutation({
-  query: ({ id, data }) => ({
-    url: `admin/blogs/${id}/update/`,
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: data,
-  }),
-  invalidatesTags: ['Blog'],
-}),
+      query: ({ id, data }) => ({
+        url: `admin/blogs/${id}/update/`,
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: data,
+      }),
+      invalidatesTags: ["Blog"],
+    }),
     deleteBlog: builder.mutation({
       query: (id) => ({ url: `admin/blogs/${id}/delete/`, method: "DELETE" }),
       invalidatesTags: ["Blog"],
@@ -221,7 +225,7 @@ export const apiSlice = createApi({
     }),
     deleteCategory: builder.mutation({
       query: (categoryId) => ({
-        url: `categories/${categoryId}/`,
+        url: `categories/${categoryId}/update-delete/`,
         method: "DELETE",
       }),
       invalidatesTags: ["Category"],
