@@ -122,10 +122,31 @@ export const apiSlice = createApi({
        📝 BLOGS CRUD ENDPOINTS
     ========================== */
     // getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
-    getBlogs: builder.query({
-      query: (page = 1) => `blogs/?page=${page}`, //  Backend pagination support
-      providesTags: ["Blog"],
-    }),
+   getBlogs: builder.query({
+  query: ({ page = 1, category = "", search = "", tag = "", author = "" }) => {
+    let url = `blogs/?page=${page}`;
+
+    if (category && category.toLowerCase() !== "all") {
+      url += `&category=${category}`;
+    }
+    if (search) {
+      url += `&search=${search}`;
+    }
+    if (tag) {
+      url += `&tag=${tag}`;
+    }
+    if (author) {
+      url += `&author=${author}`;
+    }
+
+    return url;
+  },
+  providesTags: ["Blog"],
+}),
+
+
+
+
     getAllBlogs: builder.query({
       query: () => `/blogs/`,
       providesTags: ["Blogs"],
