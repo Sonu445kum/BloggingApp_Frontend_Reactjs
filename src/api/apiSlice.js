@@ -122,30 +122,61 @@ export const apiSlice = createApi({
        📝 BLOGS CRUD ENDPOINTS
     ========================== */
     // getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
-   getBlogs: builder.query({
-  query: ({ page = 1, category = "", search = "", tag = "", author = "" }) => {
-    let url = `blogs/?page=${page}`;
+    getBlogs: builder.query({
+      query: ({
+        page = 1,
+        category = "",
+        search = "",
+        tag = "",
+        author = "",
+      }) => {
+        let url = `blogs/?page=${page}`;
 
-    if (category && category.toLowerCase() !== "all") {
-      url += `&category=${category}`;
-    }
-    if (search) {
-      url += `&search=${search}`;
-    }
-    if (tag) {
-      url += `&tag=${tag}`;
-    }
-    if (author) {
-      url += `&author=${author}`;
-    }
+        if (category && category.toLowerCase() !== "all") {
+          url += `&category=${category}`;
+        }
+        if (search) {
+          url += `&search=${search}`;
+        }
+        if (tag) {
+          url += `&tag=${tag}`;
+        }
+        if (author) {
+          url += `&author=${author}`;
+        }
 
-    return url;
-  },
-  providesTags: ["Blog"],
-}),
+        return url;
+      },
+      providesTags: ["Blog"],
+    }),
 
+    // myBlogs
+    getMyBlogs: builder.query({
+      query: (token) => ({
+        url: "blogs/myblogs/",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      providesTags: ["Blog"],
+    }),
 
+    updateMyBlog: builder.mutation({
+      query: ({ id, data, token }) => ({
+        url: `blogs/myblogs/${id}/update/`,
+        method: "PUT",
+        body: data,
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      invalidatesTags: ["Blog"],
+    }),
 
+    deleteMyBlog: builder.mutation({
+      query: ({ id, token }) => ({
+        url: `blogs/myblogs/${id}/delete/`,
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      invalidatesTags: ["Blog"],
+    }),
 
     getAllBlogs: builder.query({
       query: () => `/blogs/`,
@@ -259,7 +290,7 @@ export const apiSlice = createApi({
       query: ({ blogId, reactionType }) => ({
         url: `blogs/${blogId}/reactions/toggle/`,
         method: "POST",
-        body: { reaction_type: reactionType },
+        body: { reaction_type: reactionType }, // ✅ correct key for backend
       }),
       invalidatesTags: ["Blog"],
     }),
@@ -394,14 +425,13 @@ export const apiSlice = createApi({
 
     // 2️ Update user (role, email, username)
     updateUserRole: builder.mutation({
-      query: ({ userId, ...data }) => ({
-        url: `/users/${userId}/update`,
-        method: "PUT",
-        body: data,
+      query: ({ userId, role }) => ({
+        url: `/admin/users/${userId}/update-role/`,
+        method: "POST",
+        body: { role },
       }),
-      invalidatesTags: ["Users"], // refresh users list after update
+      invalidatesTags: ["Users"],
     }),
-
     // 3️ Create new user
     createUser: builder.mutation({
       query: (newUser) => ({
@@ -508,6 +538,9 @@ export const {
   useUpdateProfileMutation,
   useGetStatsQuery,
   useGetBlogsQuery,
+  useGetMyBlogsQuery,
+  useUpdateMyBlogMutation,
+  useDeleteMyBlogMutation,
   useGetAllBlogsQuery,
   useGetBlogQuery,
   useAddToBlogMutation,

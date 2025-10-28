@@ -56,15 +56,16 @@ const BlogDetail = () => {
 
   // Reactions
   const handleReaction = async (reactionType) => {
-    try {
-      await toggleReaction({ blogId: id, reactionType }).unwrap();
-      toast.success(`${reactionType} reaction updated!`);
-      refetch();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to react to blog");
-    }
-  };
+  try {
+    await toggleReaction({ blogId: id, reactionType }).unwrap();
+    toast.success(`${reactionType} reaction updated!`);
+    refetch();
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to react to blog");
+  }
+};
+
 
   // Navigate to Create Blog
   const handleNavigateToCreate = () => {

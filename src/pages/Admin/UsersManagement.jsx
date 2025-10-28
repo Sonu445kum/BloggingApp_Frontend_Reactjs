@@ -270,6 +270,7 @@ const UsersManagement = () => {
       </div>
     );
 
+  // 🧹 Delete user
   const handleDelete = async (userId) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
 
@@ -279,6 +280,21 @@ const UsersManagement = () => {
       refetch();
     } catch (error) {
       toast.error("Failed to delete user ❌");
+    }
+  };
+
+  // 🔁 Change user role
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      setLoadingUserId(userId);
+      await updateUserRole({ userId, role: newRole }).unwrap();
+      toast.success("Role updated successfully ✅");
+      refetch();
+    } catch (err) {
+      console.error("Error updating role:", err);
+      toast.error("Failed to update role ❌");
+    } finally {
+      setLoadingUserId(null);
     }
   };
 
@@ -308,6 +324,7 @@ const UsersManagement = () => {
               <th className="py-3 px-6 text-left">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {users.map((user) => (
               <tr
@@ -317,49 +334,48 @@ const UsersManagement = () => {
                 <td className="py-3 px-6 font-medium text-gray-700">{user.id}</td>
                 <td className="py-3 px-6 font-medium text-gray-800">{user.username}</td>
                 <td className="py-3 px-6 text-gray-600">{user.email}</td>
-                <td className="py-3 px-6 font-medium text-gray-700">
-                  <select
-                    className={`border rounded px-3 py-1 ${
-                      loadingUserId === user.id
-                        ? "bg-gray-200 cursor-not-allowed"
-                        : "bg-white"
-                    } transition-colors duration-200`}
-                    value={user.role}
-                    onChange={async (e) => {
-                      try {
-                        setLoadingUserId(user.id);
-                        await updateUserRole({
-                          userId: user.id,
-                          role: e.target.value,
-                        }).unwrap();
-                        toast.success("Role updated successfully");
-                        refetch();
-                      } catch {
-                        toast.error("Failed to update role");
-                      } finally {
-                        setLoadingUserId(null);
-                      }
-                    }}
-                    disabled={loadingUserId === user.id}
-                  >
-                    <option value="admin">Admin</option>
-                    <option value="editor">Editor</option>
-                    <option value="author">Author</option>
-                  </select>
+
+                {/* ✅ Show current role */}
+                <td className="py-3 px-6 font-semibold text-gray-700 capitalize">
+                  {user.role}
                 </td>
-                <td className="py-3 px-6 flex gap-2">
-                  <button
-                    className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
-                    onClick={() => setSelectedUser(user)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-                    onClick={() => handleDelete(user.id)}
-                  >
-                    Delete
-                  </button>
+
+                {/* ✅ Actions column */}
+                <td className="py-3 px-6">
+                  <div className="flex flex-col gap-3">
+                    {/* Dropdown for changing role */}
+                    <select
+                      className={`border rounded px-3 py-1 ${
+                        loadingUserId === user.id
+                          ? "bg-gray-200 cursor-not-allowed"
+                          : "bg-white"
+                      } transition-colors duration-200`}
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      disabled={loadingUserId === user.id}
+                    >
+                      <option value="Admin">Admin</option>
+                      <option value="Editor">Editor</option>
+                      <option value="Author">Author</option>
+                      <option value="Reader">Reader</option>
+                    </select>
+
+                    {/* Edit + Delete buttons */}
+                    <div className="flex gap-2">
+                      <button
+                        className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                        onClick={() => setSelectedUser(user)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                        onClick={() => handleDelete(user.id)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -367,6 +383,7 @@ const UsersManagement = () => {
         </table>
       </div>
 
+      {/* 🧩 Edit User Modal */}
       {selectedUser && (
         <EditUserModal
           close={() => setSelectedUser(null)}
@@ -375,15 +392,16 @@ const UsersManagement = () => {
         />
       )}
 
-      {showAddModal && (
-        <AddUserModal
-          close={() => setShowAddModal(false)}
-        />
-      )}
+      {/* ➕ Add User Modal */}
+      {showAddModal && <AddUserModal close={() => setShowAddModal(false)} />}
     </div>
   );
 };
 
 export default UsersManagement;
+
+
+
+
 
 

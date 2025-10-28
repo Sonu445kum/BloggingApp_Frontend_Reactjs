@@ -44,6 +44,7 @@ import ReactionsManagement from "./pages/Admin/ReactionsManagement"; // new
 import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import AddUserModal from "./pages/Admin/Users/AddUserModal";
+import MyBlogs from "./pages/Blogs/MyBlogs";
 
 
 // ---------------- Layout wrapper for Navbar + Footer ----------------
@@ -85,6 +86,7 @@ const AppContent = () => {
       <Route path="/blogs" element={<BlogList />} />
       <Route path="/blogs/:id" element={<BlogDetail />} />
       <Route path="/blogs/search" element={<BlogSearch />} />
+      <Route path="/my-blogs" element={<MyBlogs/>} />
 
       {/* Auth Pages */}
       <Route path="/auth/login" element={<Login />} />

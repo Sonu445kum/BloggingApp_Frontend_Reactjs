@@ -344,6 +344,7 @@ export default function Navbar() {
     () => [
       { name: "Home", path: "/" },
       { name: "Blogs", path: "/blogs" },
+      { name: "My Blogs", path: "/my-blogs" },
       { name: "About", path: "/about" },
       { name: "Contact", path: "/contact" },
     ],

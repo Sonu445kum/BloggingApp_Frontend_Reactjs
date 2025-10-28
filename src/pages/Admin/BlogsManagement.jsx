@@ -468,7 +468,6 @@ import {
 const BlogsManagement = () => {
   const { data: blogsData, isLoading, refetch } = useGetAllBlogsQuery();
 
-  // ✅ FIX: safely extract array
   const blogs = Array.isArray(blogsData)
     ? blogsData
     : blogsData?.results || [];
@@ -485,6 +484,8 @@ const BlogsManagement = () => {
   const [activeModal, setActiveModal] = useState(null);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
+  const [extraContent, setExtraContent] = useState("");
+
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -492,7 +493,6 @@ const BlogsManagement = () => {
     tags: [],
     media: null,
   });
-  const [extraContent, setExtraContent] = useState("");
 
   const categoryOptions = [
     "Technology",
@@ -521,7 +521,7 @@ const BlogsManagement = () => {
     setExtraContent("");
   };
 
-  // 🟢 Add Blog
+  // ✅ Add Blog
   const handleAddBlog = async () => {
     if (!formData.title || !formData.content || !formData.category) {
       toast.error("Please fill all required fields!");
@@ -532,7 +532,7 @@ const BlogsManagement = () => {
       const createdBlog = await createBlog({
         title: formData.title,
         content: formData.content,
-        category: formData.category,
+        category_name: formData.category,
         tags: formData.tags,
       }).unwrap();
 
@@ -566,7 +566,7 @@ const BlogsManagement = () => {
       const updateData = {
         title: formData.title,
         content: formData.content,
-        category: formData.category,
+        category_name: formData.category,
         tags: formData.tags,
       };
       await updateBlog({ id: blogId, data: updateData }).unwrap();
@@ -588,7 +588,7 @@ const BlogsManagement = () => {
     }
   };
 
-  // ➕ Add to Blog
+  // ➕ Add Extra Content
   const handleAddToBlog = async () => {
     if (!selectedBlog || !extraContent.trim()) {
       toast.error("Please enter content to add");
@@ -628,7 +628,7 @@ const BlogsManagement = () => {
       toast.success("Blog approved!");
       refetch();
     } catch {
-      toast.error("Failed to approve");
+      toast.error("Failed to approve blog");
     } finally {
       setLoadingBlogId(null);
     }
@@ -642,7 +642,7 @@ const BlogsManagement = () => {
       toast.success("Blog flagged!");
       refetch();
     } catch {
-      toast.error("Failed to flag");
+      toast.error("Failed to flag blog");
     } finally {
       setLoadingBlogId(null);
     }
@@ -678,7 +678,7 @@ const BlogsManagement = () => {
         </button>
       </div>
 
-      {/* ✅ FIXED .map() crash */}
+      {/* ✅ Blog Table */}
       <div className="overflow-x-auto rounded-xl shadow-lg">
         <table className="min-w-full bg-white rounded-xl">
           <thead className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
@@ -705,18 +705,25 @@ const BlogsManagement = () => {
                 >
                   <td className="py-3 px-6">{blog.id}</td>
                   <td className="py-3 px-6 font-semibold">{blog.title}</td>
-                  <td className="py-3 px-6">{blog.category || "—"}</td>
-                  <td className="py-3 px-6">{blog.author?.username}</td>
+
+                  {/* ✅ Category fix: safely show category name */}
+                  <td className="py-3 px-6">
+                    {blog.category?.name || blog.category || "—"}
+                  </td>
+
+                  <td className="py-3 px-6">{blog.author?.username || "—"}</td>
                   <td className="py-3 px-6">{blog.views ?? 0}</td>
                   <td className="py-3 px-6 capitalize">
                     {blog.status ?? "pending"}
                   </td>
+
                   <td className="py-3 px-6 flex flex-wrap gap-2">
                     <button
                       className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
                       onClick={() => handleApprove(blog.id)}
+                      disabled={loadingBlogId === blog.id}
                     >
-                      Approve
+                      {loadingBlogId === blog.id ? "Approving..." : "Approve"}
                     </button>
                     <button
                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
@@ -725,7 +732,8 @@ const BlogsManagement = () => {
                         setFormData({
                           title: blog.title,
                           content: blog.content,
-                          category: blog.category || "",
+                          category:
+                            blog.category?.name || blog.category || "",
                           tags: blog.tags || [],
                           media: null,
                         });
@@ -769,6 +777,7 @@ const BlogsManagement = () => {
         </table>
       </div>
 
+      {/* 🧩 Modals */}
       {activeModal === "add" && (
         <BlogFormModal
           title="Add New Blog"
@@ -910,4 +919,6 @@ const BlogFormModal = ({
 );
 
 export default BlogsManagement;
+
+
 
