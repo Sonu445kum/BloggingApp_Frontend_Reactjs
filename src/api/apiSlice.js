@@ -290,10 +290,15 @@ export const apiSlice = createApi({
       query: ({ blogId, reactionType }) => ({
         url: `blogs/${blogId}/reactions/toggle/`,
         method: "POST",
-        body: { reaction_type: reactionType }, // ✅ correct key for backend
+        body: { reaction_type: reactionType }, // ✅ matches backend expectation
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
       }),
       invalidatesTags: ["Blog"],
     }),
+
     getAllReactions: builder.query({ query: () => "admin/reactions/" }),
     deleteReaction: builder.mutation({
       query: (id) => ({
