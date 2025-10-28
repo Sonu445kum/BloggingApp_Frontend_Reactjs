@@ -151,19 +151,20 @@ const Dashboard = () => {
   const safeTrendingBlogs = trendingBlogs || [];
 
   /* 🔹 Fix: Proper Category Detection */
-  const blogsPerCategory = safeTrendingBlogs.reduce((acc, blog) => {
-    const categoryName =
-      blog?.category?.name?.trim() && blog.category.name !== "Uncategorized"
-        ? blog.category.name
-        : "No Category";
-    acc[categoryName] = (acc[categoryName] || 0) + 1;
-    return acc;
-  }, {});
+const blogsPerCategory = safeTrendingBlogs.reduce((acc, blog) => {
+  const categoryName =
+    blog?.category?.name?.trim() && blog.category.name !== "Uncategorized"
+      ? blog.category.name
+      : "No Category";
+  acc[categoryName] = (acc[categoryName] || 0) + 1;
+  return acc;
+}, {});
 
-  const categoryChartData = Object.entries(blogsPerCategory).map(([name, count]) => ({
-    name,
-    count,
-  }));
+const categoryChartData = Object.entries(blogsPerCategory).map(([name, count]) => ({
+  name,
+  count,
+}));
+
 
   /* 🔹 Overall Stats */
   const overviewData = [
@@ -261,34 +262,7 @@ const Dashboard = () => {
         </ResponsiveContainer>
       </motion.div>
 
-      {/* 🔹 Category % Distribution (Pie Chart) */}
-      <motion.div
-        className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-6"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-      >
-        <h2 className="text-2xl font-semibold mb-4 text-gray-700 dark:text-gray-200 border-b pb-2">
-          Category % Distribution
-        </h2>
-        <ResponsiveContainer width="100%" height={400}>
-          <PieChart>
-            <Pie
-              data={categoryPercentageData}
-              dataKey="value"
-              nameKey="name"
-              outerRadius={150}
-              label={({ name, value }) => `${name} (${value}%)`}
-            >
-              {categoryPercentageData.map((entry, index) => (
-                <Cell key={index} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </motion.div>
-
+      
       {/* 🔹 Growth Trend (Line Chart) */}
       <motion.div
         className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl p-6"
@@ -314,6 +288,17 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
+
+// add the most active user and trending blogs
+
+
+
+
+
+
+
+
 
 
 
