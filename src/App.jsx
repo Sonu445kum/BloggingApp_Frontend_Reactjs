@@ -45,6 +45,7 @@ import Profile from "./pages/Profile";
 import ProfileEdit from "./pages/ProfileEdit";
 import AddUserModal from "./pages/Admin/Users/AddUserModal";
 import MyBlogs from "./pages/Blogs/MyBlogs";
+import ReactionTest from "./components/ReactionTest";
 
 
 // ---------------- Layout wrapper for Navbar + Footer ----------------
@@ -77,6 +78,7 @@ const AppContent = () => {
   return (
     <Routes>
       {/* Public Pages */}
+
       <Route path="/" element={<Landing />} />
       <Route path="/home" element={<Home />} />
       <Route path="/about" element={<About />} />
@@ -128,6 +130,7 @@ const AppContent = () => {
 const App = () => (
   <Router>
     <Layout>
+      {/* <ReactionTest/> */}
       <AppContent />
     </Layout>
     <ToastContainer position="top-right" autoClose={3000} />

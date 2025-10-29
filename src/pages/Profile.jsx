@@ -71,13 +71,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Your Stats</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {statsData.map((stat, idx) => (
-          <StatCard key={idx} label={stat.label} count={stat.value} />
-        ))}
-      </div>
+      
     </div>
   );
 };
@@ -89,11 +83,11 @@ const InfoCard = ({ title, value }) => (
   </div>
 );
 
-const StatCard = ({ label, count }) => (
-  <div className="p-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg shadow-lg text-center text-white hover:scale-105 transform transition-all">
-    <h3 className="font-semibold text-lg">{label}</h3>
-    <p className="text-2xl font-bold mt-1">{count || 0}</p>
-  </div>
-);
+// const StatCard = ({ label, count }) => (
+//   <div className="p-4 bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg shadow-lg text-center text-white hover:scale-105 transform transition-all">
+//     <h3 className="font-semibold text-lg">{label}</h3>
+//     <p className="text-2xl font-bold mt-1">{count || 0}</p>
+//   </div>
+// );
 
 export default Profile;

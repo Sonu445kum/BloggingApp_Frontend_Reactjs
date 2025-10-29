@@ -1,3 +1,8 @@
+
+
+
+
+// Add the Paginations
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import {
@@ -5,15 +10,27 @@ import {
   useMarkNotificationReadMutation,
   useDeleteAdminNotificationMutation,
 } from "../../api/apiSlice";
-import { Loader2, CheckCircle, Trash2, Bell } from "lucide-react";
+import { Loader2, CheckCircle, Trash2, Bell, RotateCcw } from "lucide-react";
+import Paginations from "../../components/Paginations"; // ✅ Pagination Component
 
 const NotificationsManagement = () => {
-  const { data: notifications = [], isLoading, isError, refetch } =
-    useGetAdminNotificationsQuery();
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // ✅ Fetch notifications with pagination
+  const {
+    data: notificationsData,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAdminNotificationsQuery({ page: currentPage });
 
   const [markRead] = useMarkNotificationReadMutation();
   const [deleteNotification] = useDeleteAdminNotificationMutation();
   const [loadingId, setLoadingId] = useState(null);
+
+  // ✅ Extract results and pagination info
+  const notifications = notificationsData?.results || [];
+  const totalPages = notificationsData?.total_pages || 1;
 
   const handleMarkRead = async (id) => {
     try {
@@ -41,9 +58,25 @@ const NotificationsManagement = () => {
     }
   };
 
-  if (isLoading) return <Loader2 className="animate-spin" />;
+  const handleRefresh = () => {
+    setCurrentPage(1);
+    refetch();
+    toast.info("🔄 Notifications refreshed");
+  };
 
-  if (isError) return <p className="text-red-500">Failed to fetch notifications.</p>;
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center h-64 text-gray-600 font-semibold">
+        <Loader2 className="animate-spin w-6 h-6 mr-2" /> Loading notifications...
+      </div>
+    );
+
+  if (isError)
+    return (
+      <div className="text-red-500 text-center mt-20 font-medium">
+        Failed to fetch notifications.
+      </div>
+    );
 
   if (!notifications.length)
     return (
@@ -55,11 +88,23 @@ const NotificationsManagement = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">🔔 Notifications Management</h1>
+      {/* ✅ Header Section */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">
+          🔔 Notifications Management
+        </h1>
+        <button
+          onClick={handleRefresh}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+        >
+          <RotateCcw className="w-5 h-5" /> Refresh
+        </button>
+      </div>
 
-      <div className="overflow-x-auto bg-white rounded-2xl shadow-lg">
+      {/* ✅ Table Section */}
+      <div className="overflow-x-auto bg-white rounded-2xl shadow-xl">
         <table className="min-w-full border-collapse">
-          <thead className="bg-gray-200 text-gray-700 uppercase text-sm">
+          <thead className="bg-gray-100 text-gray-700 uppercase text-sm">
             <tr>
               <th className="py-3 px-4 text-left">ID</th>
               <th className="py-3 px-4 text-left">Message</th>
@@ -68,6 +113,7 @@ const NotificationsManagement = () => {
               <th className="py-3 px-4 text-left">Actions</th>
             </tr>
           </thead>
+
           <tbody>
             {notifications.map((note) => (
               <tr
@@ -116,6 +162,15 @@ const NotificationsManagement = () => {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* ✅ Pagination */}
+      <div className="mt-6 flex justify-center">
+        <Paginations
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       </div>
     </div>
   );

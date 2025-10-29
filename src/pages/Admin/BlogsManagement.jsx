@@ -1,9 +1,10 @@
-// import React, { useState } from "react";
+
+// import React, { useState, useEffect } from "react";
 // import { toast } from "react-toastify";
 // import ReactQuill from "react-quill";
 // import "react-quill/dist/quill.snow.css";
 // import {
-//   useGetAllBlogsQuery,
+//   useGetAdminBlogsQuery,
 //   useCreateBlogMutation,
 //   useUpdateBlogMutation,
 //   useDeleteBlogMutation,
@@ -12,10 +13,37 @@
 //   useApproveBlogMutation,
 //   useFlagBlogMutation,
 // } from "../../api/apiSlice";
+// import Paginations from "../../components/Paginations";
 
 // const BlogsManagement = () => {
-//   const { data: blogs, isLoading, refetch } = useGetAllBlogsQuery();
-  
+//   // ✅ State Management
+//   const [currentPage, setCurrentPage] = useState(1);
+//   const [statusFilter, setStatusFilter] = useState("");
+//   const [searchQuery, setSearchQuery] = useState("");
+//   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+
+//   // 🕓 Debounce search (user stops typing → trigger API)
+//   useEffect(() => {
+//     const delay = setTimeout(() => setDebouncedSearch(searchQuery), 500);
+//     return () => clearTimeout(delay);
+//   }, [searchQuery]);
+
+//   // ✅ Fetch Admin Blogs
+//   const {
+//     data: blogsData,
+//     isLoading,
+//     refetch,
+//     isFetching,
+//   } = useGetAdminBlogsQuery({
+//     page: currentPage,
+//     status: statusFilter,
+//     search: debouncedSearch,
+//   });
+
+//   const blogs = blogsData?.results || [];
+//   const totalPages = blogsData?.total_pages || 1;
+
+//   // ✅ Mutations
 //   const [createBlog] = useCreateBlogMutation();
 //   const [updateBlog] = useUpdateBlogMutation();
 //   const [deleteBlog] = useDeleteBlogMutation();
@@ -24,10 +52,12 @@
 //   const [approveBlog] = useApproveBlogMutation();
 //   const [flagBlog] = useFlagBlogMutation();
 
+//   // ✅ UI States
 //   const [loadingBlogId, setLoadingBlogId] = useState(null);
 //   const [activeModal, setActiveModal] = useState(null);
 //   const [selectedBlog, setSelectedBlog] = useState(null);
 //   const [previewImage, setPreviewImage] = useState(null);
+//   const [extraContent, setExtraContent] = useState("");
 //   const [formData, setFormData] = useState({
 //     title: "",
 //     content: "",
@@ -35,7 +65,6 @@
 //     tags: [],
 //     media: null,
 //   });
-//   const [extraContent, setExtraContent] = useState("");
 
 //   const categoryOptions = [
 //     "Technology",
@@ -50,13 +79,7 @@
 //     "Sports",
 //   ];
 
-//   if (isLoading)
-//     return (
-//       <div className="flex justify-center items-center h-screen text-gray-700 font-semibold text-xl">
-//         Loading blogs...
-//       </div>
-//     );
-
+//   // ✅ Reset form after success
 //   const resetForm = () => {
 //     setFormData({ title: "", content: "", category: "", tags: [], media: null });
 //     setPreviewImage(null);
@@ -64,7 +87,16 @@
 //     setExtraContent("");
 //   };
 
-//   // 🟢 Add Blog
+//   // ✅ Handle Refresh
+//   const handleRefresh = () => {
+//     setSearchQuery("");
+//     setStatusFilter("");
+//     setCurrentPage(1);
+//     refetch();
+//     toast.info("Blog list refreshed");
+//   };
+
+//   // ✅ Add Blog
 //   const handleAddBlog = async () => {
 //     if (!formData.title || !formData.content || !formData.category) {
 //       toast.error("Please fill all required fields!");
@@ -72,18 +104,14 @@
 //     }
 
 //     try {
-//       // Create blog (without media first)
 //       const createdBlog = await createBlog({
 //         title: formData.title,
 //         content: formData.content,
-//         category: formData.category,
+//         category_name: formData.category,
 //         tags: formData.tags,
 //       }).unwrap();
 
 //       const blogId = createdBlog.id ?? createdBlog.blog?.id;
-//       if (!blogId) throw new Error("Blog ID is missing from createBlog response");
-
-//       // Upload media if exists
 //       if (formData.media) {
 //         const mediaForm = new FormData();
 //         mediaForm.append("file", formData.media);
@@ -92,33 +120,30 @@
 //       }
 
 //       toast.success("Blog added successfully!");
-//       refetch();
-//       resetForm();
+//       handleRefresh();
 //       setActiveModal(null);
 //     } catch (err) {
 //       console.error(err);
-//       toast.error(err?.data?.error || "Failed to add blog");
+//       toast.error("Failed to add blog");
 //     }
 //   };
 
 //   // ✏️ Edit Blog
 //   const handleEditBlog = async () => {
-//     if (!selectedBlog) return;
-
 //     try {
-//       const blogId = selectedBlog.id ?? selectedBlog.blog?.id;
-//       if (!blogId) throw new Error("Blog ID is missing for editing");
+//       const blogId = selectedBlog?.id;
+//       if (!blogId) return toast.error("Blog ID missing");
 
-//       // Update blog data without featured_image first
-//       const updateData = {
-//         title: formData.title,
-//         content: formData.content,
-//         category: formData.category,
-//         tags: formData.tags,
-//       };
-//       await updateBlog({ id: blogId, data: updateData }).unwrap();
+//       await updateBlog({
+//         id: blogId,
+//         data: {
+//           title: formData.title,
+//           content: formData.content,
+//           category_name: formData.category,
+//           tags: formData.tags,
+//         },
+//       }).unwrap();
 
-//       // Upload new media if user selected a file
 //       if (formData.media) {
 //         const mediaForm = new FormData();
 //         mediaForm.append("file", formData.media);
@@ -127,30 +152,23 @@
 //       }
 
 //       toast.success("Blog updated successfully!");
-//       refetch();
-//       resetForm();
+//       handleRefresh();
 //       setActiveModal(null);
-//     } catch (err) {
-//       console.error(err);
-//       toast.error(err?.data?.error || "Failed to update blog");
+//     } catch {
+//       toast.error("Failed to update blog");
 //     }
 //   };
 
-//   // ➕ Add to Blog
+//   // ➕ Add Extra Content
 //   const handleAddToBlog = async () => {
-//     if (!selectedBlog || !extraContent.trim()) {
-//       toast.error("Please enter content to add");
+//     if (!extraContent.trim()) {
+//       toast.error("Enter content to add!");
 //       return;
 //     }
-
 //     try {
-//       await addToBlog({
-//         blogId: selectedBlog.id,
-//         content: extraContent,
-//       }).unwrap();
-//       toast.success("Added new content to blog!");
-//       refetch();
-//       resetForm();
+//       await addToBlog({ blogId: selectedBlog.id, content: extraContent }).unwrap();
+//       toast.success("Added new content!");
+//       handleRefresh();
 //       setActiveModal(null);
 //     } catch {
 //       toast.error("Failed to add content");
@@ -162,8 +180,8 @@
 //     if (!window.confirm("Are you sure you want to delete this blog?")) return;
 //     try {
 //       await deleteBlog(id).unwrap();
-//       toast.success("Blog deleted successfully!");
-//       refetch();
+//       toast.success("Blog deleted!");
+//       handleRefresh();
 //     } catch {
 //       toast.error("Failed to delete blog");
 //     }
@@ -174,8 +192,8 @@
 //     try {
 //       setLoadingBlogId(blogId);
 //       await approveBlog(blogId).unwrap();
-//       toast.success("Blog approved successfully");
-//       refetch();
+//       toast.success("Blog approved!");
+//       handleRefresh();
 //     } catch {
 //       toast.error("Failed to approve blog");
 //     } finally {
@@ -188,16 +206,16 @@
 //     try {
 //       setLoadingBlogId(blogId);
 //       await flagBlog(blogId).unwrap();
-//       toast.success("Blog flagged successfully");
-//       refetch();
+//       toast.success("Blog flagged!");
+//       handleRefresh();
 //     } catch {
 //       toast.error("Failed to flag blog");
 //     } finally {
 //       setLoadingBlogId(null);
 //     }
-//   }; 
+//   };
 
-//   // ✨ Modal UI
+//   // 🧩 Modal Layout
 //   const Modal = ({ title, children, onClose }) => (
 //     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 //       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto">
@@ -213,249 +231,166 @@
 //     </div>
 //   );
 
+//   if (isLoading || isFetching)
+//     return (
+//       <div className="flex justify-center items-center h-screen text-gray-700 text-xl font-semibold">
+//         Loading blogs...
+//       </div>
+//     );
+
 //   return (
 //     <div className="min-h-screen p-8 bg-gradient-to-br from-gray-100 to-gray-300">
-//       <h1 className="text-4xl font-bold mb-8 text-gray-800 drop-shadow-md">
-//         Blogs Management
-//       </h1>
+//       <div className="flex flex-wrap justify-between items-center mb-8">
+//         <h1 className="text-4xl font-bold text-gray-800">Blogs Management</h1>
 
-//       <div className="flex gap-4 mb-8">
-//         <button
-//           className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition-transform transform hover:scale-105 shadow-md"
-//           onClick={() => setActiveModal("add")}
-//         >
-//           ➕ Add Blog
-//         </button>
+//         {/* 🔍 Filters */}
+//         <div className="flex flex-wrap gap-3">
+//           <input
+//             type="text"
+//             placeholder="Search..."
+//             value={searchQuery}
+//             onChange={(e) => {
+//               setSearchQuery(e.target.value);
+//               setCurrentPage(1);
+//             }}
+//             className="border rounded-lg px-3 py-2"
+//           />
+//           <select
+//             value={statusFilter}
+//             onChange={(e) => {
+//               setStatusFilter(e.target.value);
+//               setCurrentPage(1);
+//             }}
+//             className="border rounded-lg px-3 py-2"
+//           >
+//             <option value="">All</option>
+//             <option value="published">Published</option>
+//             <option value="draft">Draft</option>
+//             <option value="pending">Pending</option>
+//           </select>
+//           <button
+//             onClick={handleRefresh}
+//             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+//           >
+//             Refresh
+//           </button>
+//         </div>
 //       </div>
 
-//       {/* Blogs Table */}
-//       <div className="overflow-x-auto rounded-xl shadow-lg">
-//         <table className="min-w-full bg-white rounded-xl">
+//       {/* 🧾 Blog Table */}
+//       <div className="overflow-x-auto rounded-xl shadow-lg bg-white">
+//         <table className="min-w-full">
 //           <thead className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
 //             <tr>
 //               <th className="py-3 px-6 text-left">ID</th>
 //               <th className="py-3 px-6 text-left">Title</th>
 //               <th className="py-3 px-6 text-left">Category</th>
 //               <th className="py-3 px-6 text-left">Author</th>
-//               <th className="py-3 px-6 text-left">Views</th>
 //               <th className="py-3 px-6 text-left">Status</th>
 //               <th className="py-3 px-6 text-left">Actions</th>
 //             </tr>
 //           </thead>
 //           <tbody>
-//             {(blogs || []).map((blog, idx) => (
-//               <tr
-//                 key={blog.id}
-//                 className={`border-b transition-colors ${
-//                   idx % 2 === 0 ? "bg-gray-50 hover:bg-gray-100" : "bg-white hover:bg-gray-100"
-//                 }`}
-//               >
-//                 <td className="py-3 px-6">{blog.id}</td>
-//                 <td className="py-3 px-6 font-semibold">{blog.title}</td>
-//                 <td className="py-3 px-6">{blog.category || "—"}</td>
-//                 <td className="py-3 px-6">{blog.author?.username}</td>
-//                 <td className="py-3 px-6">{blog.views ?? 0}</td>
-//                 <td className="py-3 px-6 capitalize">{blog.status ?? "pending"}</td>
-//                 <td className="py-3 px-6 flex flex-wrap gap-2">
-//                   <button
-//                     className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
-//                     onClick={() => handleApprove(blog.id)}
+//             {blogs.length > 0 ? (
+//               blogs.map((blog) => (
+//                 <tr key={blog.id} className="border-b hover:bg-gray-50">
+//                   <td className="py-3 px-6">{blog.id}</td>
+//                   <td className="py-3 px-6 font-semibold">{blog.title}</td>
+//                   <td className="py-3 px-6">{blog.category?.name || "—"}</td>
+//                   <td className="py-3 px-6">{blog.author?.username || "—"}</td>
+//                   <td
+//                     className={`py-3 px-6 capitalize font-semibold ${
+//                       blog.status === "published"
+//                         ? "text-green-600"
+//                         : blog.status === "draft"
+//                         ? "text-yellow-600"
+//                         : "text-red-600"
+//                     }`}
 //                   >
-//                     Approve
-//                   </button>
-//                   <button
-//                     className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
-//                     onClick={() => {
-//                       setSelectedBlog(blog);
-//                       setFormData({
-//                         title: blog.title,
-//                         content: blog.content,
-//                         category: blog.category || "",
-//                         tags: blog.tags || [],
-//                         media: null,
-//                       });
-//                       setActiveModal("edit");
-//                     }}
-//                   >
-//                     Edit
-//                   </button>
-//                   <button
-//                     className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
-//                     onClick={() => handleDeleteBlog(blog.id)}
-//                   >
-//                     Delete
-//                   </button>
-//                   <button
-//                     className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
-//                     onClick={() => {
-//                       setSelectedBlog(blog);
-//                       setActiveModal("addToBlog");
-//                     }}
-//                   >
-//                     Add Content
-//                   </button>
-//                   <button
-//                     className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition"
-//                     onClick={() => handleFlag(blog.id)}
-//                   >
-//                     Flag
-//                   </button>
+//                     {blog.status || "pending"}
+//                   </td>
+//                   <td className="py-3 px-6 flex flex-wrap gap-2">
+//                     <button
+//                       className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+//                       onClick={() => handleApprove(blog.id)}
+//                       disabled={loadingBlogId === blog.id}
+//                     >
+//                       Approve
+//                     </button>
+//                     <button
+//                       className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
+//                       onClick={() => {
+//                         setSelectedBlog(blog);
+//                         setFormData({
+//                           title: blog.title,
+//                           content: blog.content,
+//                           category: blog.category?.name || "",
+//                           tags: blog.tags || [],
+//                           media: null,
+//                         });
+//                         setActiveModal("edit");
+//                       }}
+//                     >
+//                       Edit
+//                     </button>
+//                     <button
+//                       className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+//                       onClick={() => handleDeleteBlog(blog.id)}
+//                     >
+//                       Delete
+//                     </button>
+//                     <button
+//                       className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+//                       onClick={() => {
+//                         setSelectedBlog(blog);
+//                         setActiveModal("addToBlog");
+//                       }}
+//                     >
+//                       Add Content
+//                     </button>
+//                     <button
+//                       className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+//                       onClick={() => handleFlag(blog.id)}
+//                     >
+//                       Flag
+//                     </button>
+//                   </td>
+//                 </tr>
+//               ))
+//             ) : (
+//               <tr>
+//                 <td colSpan="6" className="text-center py-6 text-gray-500 font-medium">
+//                   No blogs found.
 //                 </td>
 //               </tr>
-//             ))}
+//             )}
 //           </tbody>
 //         </table>
 //       </div>
 
-//       {/* Reuse Modals for Add, Edit, AddToBlog */}
-//       {activeModal === "add" && (
-//         <BlogFormModal
-//           title="Add New Blog"
-//           formData={formData}
-//           setFormData={setFormData}
-//           categoryOptions={categoryOptions}
-//           previewImage={previewImage}
-//           setPreviewImage={setPreviewImage}
-//           onSubmit={handleAddBlog}
-//           onClose={() => setActiveModal(null)}
+//       {/* ✅ Pagination */}
+//       <div className="mt-6 flex justify-center">
+//         <Paginations
+//           currentPage={currentPage}
+//           totalPages={totalPages}
+//           onPageChange={setCurrentPage}
 //         />
-//       )}
-
-//       {activeModal === "edit" && selectedBlog && (
-//         <BlogFormModal
-//           title="Edit Blog"
-//           formData={formData}
-//           setFormData={setFormData}
-//           categoryOptions={categoryOptions}
-//           previewImage={previewImage}
-//           setPreviewImage={setPreviewImage}
-//           onSubmit={handleEditBlog}
-//           onClose={() => setActiveModal(null)}
-//         />
-//       )}
-
-//       {activeModal === "addToBlog" && selectedBlog && (
-//         <Modal title="Add Content to Blog" onClose={() => setActiveModal(null)}>
-//           <textarea
-//             value={extraContent}
-//             onChange={(e) => setExtraContent(e.target.value)}
-//             className="w-full border rounded px-3 py-2 mb-4 h-40"
-//             placeholder="Enter extra content"
-//           />
-//           <button
-//             onClick={handleAddToBlog}
-//             className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded transition"
-//           >
-//             Add Content
-//           </button>
-//         </Modal>
-//       )}
+//       </div>
 //     </div>
 //   );
 // };
 
-// // Reusable Modal Form for Add/Edit
-// const BlogFormModal = ({
-//   title,
-//   formData,
-//   setFormData,
-//   categoryOptions,
-//   previewImage,
-//   setPreviewImage,
-//   onSubmit,
-//   onClose,
-// }) => (
-//   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-//     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto animate-fadeIn">
-//       <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-
-//       <input
-//         type="text"
-//         placeholder="Title"
-//         value={formData.title}
-//         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-//         className="border rounded w-full px-3 py-2 mb-3"
-//       />
-
-//       <select
-//         value={formData.category}
-//         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-//         className="border rounded w-full px-3 py-2 mb-3"
-//       >
-//         <option value="">Select Category</option>
-//         {categoryOptions.map((cat) => (
-//           <option key={cat} value={cat}>
-//             {cat}
-//           </option>
-//         ))}
-//       </select>
-
-//       <div className="mb-3">
-//         <label className="block mb-1 font-semibold">Tags (comma separated)</label>
-//         <input
-//           type="text"
-//           placeholder="Enter tags separated by comma"
-//           value={formData.tags?.join(", ") || ""}
-//           onChange={(e) =>
-//             setFormData({
-//               ...formData,
-//               tags: e.target.value.split(",").map((t) => t.trim()),
-//             })
-//           }
-//           className="border rounded w-full px-3 py-2"
-//         />
-//       </div>
-
-//       <ReactQuill
-//         value={formData.content}
-//         onChange={(val) => setFormData({ ...formData, content: val })}
-//         className="mb-3 h-60"
-//       />
-
-//       <input
-//         type="file"
-//         accept="image/*"
-//         onChange={(e) => {
-//           const file = e.target.files[0];
-//           setFormData({ ...formData, media: file });
-//           if (file) setPreviewImage(URL.createObjectURL(file));
-//         }}
-//         className="border rounded w-full px-3 py-2 mb-4"
-//       />
-
-//       {previewImage && (
-//         <img
-//           src={previewImage}
-//           alt="Preview"
-//           className="w-full h-40 object-cover rounded-lg mb-4 border"
-//         />
-//       )}
-
-//       <button
-//         onClick={onSubmit}
-//         className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded transition"
-//       >
-//         {title.includes("Edit") ? "Update Blog" : "Add Blog"}
-//       </button>
-
-//       <button
-//         onClick={onClose}
-//         className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold"
-//       >
-//         ✖
-//       </button>
-//     </div>
-//   </div>
-// );
-
 // export default BlogsManagement;
+
+
+
 
 import React, { useState } from "react";
 import { toast } from "react-toastify";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import {
-  useGetAllBlogsQuery,
+  useGetAdminBlogsQuery,
   useCreateBlogMutation,
   useUpdateBlogMutation,
   useDeleteBlogMutation,
@@ -464,14 +399,28 @@ import {
   useApproveBlogMutation,
   useFlagBlogMutation,
 } from "../../api/apiSlice";
+import Paginations from "../../components/Paginations";
 
 const BlogsManagement = () => {
-  const { data: blogsData, isLoading, refetch } = useGetAllBlogsQuery();
+  // ✅ State Management
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("");
 
-  const blogs = Array.isArray(blogsData)
-    ? blogsData
-    : blogsData?.results || [];
+  // ✅ Fetch Admin Blogs (no search now)
+  const {
+    data: blogsData,
+    isLoading,
+    refetch,
+    isFetching,
+  } = useGetAdminBlogsQuery({
+    page: currentPage,
+    status: statusFilter,
+  });
 
+  const blogs = blogsData?.results || [];
+  const totalPages = blogsData?.total_pages || 1;
+
+  // ✅ Mutations
   const [createBlog] = useCreateBlogMutation();
   const [updateBlog] = useUpdateBlogMutation();
   const [deleteBlog] = useDeleteBlogMutation();
@@ -480,12 +429,12 @@ const BlogsManagement = () => {
   const [approveBlog] = useApproveBlogMutation();
   const [flagBlog] = useFlagBlogMutation();
 
+  // ✅ UI States
   const [loadingBlogId, setLoadingBlogId] = useState(null);
   const [activeModal, setActiveModal] = useState(null);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [extraContent, setExtraContent] = useState("");
-
   const [formData, setFormData] = useState({
     title: "",
     content: "",
@@ -507,19 +456,15 @@ const BlogsManagement = () => {
     "Sports",
   ];
 
-  if (isLoading)
-    return (
-      <div className="flex justify-center items-center h-screen text-gray-700 font-semibold text-xl">
-        Loading blogs...
-      </div>
-    );
-
+  // ✅ Reset form after success
   const resetForm = () => {
     setFormData({ title: "", content: "", category: "", tags: [], media: null });
     setPreviewImage(null);
     setSelectedBlog(null);
     setExtraContent("");
   };
+
+  
 
   // ✅ Add Blog
   const handleAddBlog = async () => {
@@ -537,8 +482,6 @@ const BlogsManagement = () => {
       }).unwrap();
 
       const blogId = createdBlog.id ?? createdBlog.blog?.id;
-      if (!blogId) throw new Error("Blog ID missing from response");
-
       if (formData.media) {
         const mediaForm = new FormData();
         mediaForm.append("file", formData.media);
@@ -547,29 +490,29 @@ const BlogsManagement = () => {
       }
 
       toast.success("Blog added successfully!");
-      refetch();
-      resetForm();
+      handleRefresh();
       setActiveModal(null);
     } catch (err) {
       console.error(err);
-      toast.error(err?.data?.error || "Failed to add blog");
+      toast.error("Failed to add blog");
     }
   };
 
   // ✏️ Edit Blog
   const handleEditBlog = async () => {
-    if (!selectedBlog) return;
     try {
-      const blogId = selectedBlog.id ?? selectedBlog.blog?.id;
-      if (!blogId) throw new Error("Blog ID missing for edit");
+      const blogId = selectedBlog?.id;
+      if (!blogId) return toast.error("Blog ID missing");
 
-      const updateData = {
-        title: formData.title,
-        content: formData.content,
-        category_name: formData.category,
-        tags: formData.tags,
-      };
-      await updateBlog({ id: blogId, data: updateData }).unwrap();
+      await updateBlog({
+        id: blogId,
+        data: {
+          title: formData.title,
+          content: formData.content,
+          category_name: formData.category,
+          tags: formData.tags,
+        },
+      }).unwrap();
 
       if (formData.media) {
         const mediaForm = new FormData();
@@ -579,29 +522,23 @@ const BlogsManagement = () => {
       }
 
       toast.success("Blog updated successfully!");
-      refetch();
-      resetForm();
+      handleRefresh();
       setActiveModal(null);
-    } catch (err) {
-      console.error(err);
-      toast.error(err?.data?.error || "Failed to update blog");
+    } catch {
+      toast.error("Failed to update blog");
     }
   };
 
   // ➕ Add Extra Content
   const handleAddToBlog = async () => {
-    if (!selectedBlog || !extraContent.trim()) {
-      toast.error("Please enter content to add");
+    if (!extraContent.trim()) {
+      toast.error("Enter content to add!");
       return;
     }
     try {
-      await addToBlog({
-        blogId: selectedBlog.id,
-        content: extraContent,
-      }).unwrap();
+      await addToBlog({ blogId: selectedBlog.id, content: extraContent }).unwrap();
       toast.success("Added new content!");
-      refetch();
-      resetForm();
+      handleRefresh();
       setActiveModal(null);
     } catch {
       toast.error("Failed to add content");
@@ -613,8 +550,8 @@ const BlogsManagement = () => {
     if (!window.confirm("Are you sure you want to delete this blog?")) return;
     try {
       await deleteBlog(id).unwrap();
-      toast.success("Blog deleted successfully!");
-      refetch();
+      toast.success("Blog deleted!");
+      handleRefresh();
     } catch {
       toast.error("Failed to delete blog");
     }
@@ -626,7 +563,7 @@ const BlogsManagement = () => {
       setLoadingBlogId(blogId);
       await approveBlog(blogId).unwrap();
       toast.success("Blog approved!");
-      refetch();
+      handleRefresh();
     } catch {
       toast.error("Failed to approve blog");
     } finally {
@@ -640,7 +577,7 @@ const BlogsManagement = () => {
       setLoadingBlogId(blogId);
       await flagBlog(blogId).unwrap();
       toast.success("Blog flagged!");
-      refetch();
+      handleRefresh();
     } catch {
       toast.error("Failed to flag blog");
     } finally {
@@ -648,6 +585,7 @@ const BlogsManagement = () => {
     }
   };
 
+  // 🧩 Modal Layout
   const Modal = ({ title, children, onClose }) => (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative animate-fadeIn max-h-[90vh] overflow-y-auto">
@@ -663,77 +601,85 @@ const BlogsManagement = () => {
     </div>
   );
 
+  if (isLoading || isFetching)
+    return (
+      <div className="flex justify-center items-center h-screen text-gray-700 text-xl font-semibold">
+        Loading blogs...
+      </div>
+    );
+
   return (
     <div className="min-h-screen p-8 bg-gradient-to-br from-gray-100 to-gray-300">
-      <h1 className="text-4xl font-bold mb-8 text-gray-800 drop-shadow-md">
-        Blogs Management
-      </h1>
+      <div className="flex flex-wrap justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-gray-800">Blogs Management</h1>
 
-      <div className="flex gap-4 mb-8">
-        <button
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl transition-transform transform hover:scale-105 shadow-md"
-          onClick={() => setActiveModal("add")}
-        >
-          ➕ Add Blog
-        </button>
+        {/* 🔍 Filters (only status + refresh) */}
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="border rounded-lg px-3 py-2"
+          >
+            <option value="">All</option>
+            <option value="published">Published</option>
+            <option value="draft">Draft</option>
+          </select>
+
+         
+        </div>
       </div>
 
-      {/* ✅ Blog Table */}
-      <div className="overflow-x-auto rounded-xl shadow-lg">
-        <table className="min-w-full bg-white rounded-xl">
+      {/* 🧾 Blog Table */}
+      <div className="overflow-x-auto rounded-xl shadow-lg bg-white">
+        <table className="min-w-full">
           <thead className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
             <tr>
               <th className="py-3 px-6 text-left">ID</th>
               <th className="py-3 px-6 text-left">Title</th>
               <th className="py-3 px-6 text-left">Category</th>
               <th className="py-3 px-6 text-left">Author</th>
-              <th className="py-3 px-6 text-left">Views</th>
               <th className="py-3 px-6 text-left">Status</th>
               <th className="py-3 px-6 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {blogs.length > 0 ? (
-              blogs.map((blog, idx) => (
-                <tr
-                  key={blog.id}
-                  className={`border-b ${
-                    idx % 2 === 0
-                      ? "bg-gray-50 hover:bg-gray-100"
-                      : "bg-white hover:bg-gray-100"
-                  }`}
-                >
+              blogs.map((blog) => (
+                <tr key={blog.id} className="border-b hover:bg-gray-50">
                   <td className="py-3 px-6">{blog.id}</td>
                   <td className="py-3 px-6 font-semibold">{blog.title}</td>
-
-                  {/* ✅ Category fix: safely show category name */}
-                  <td className="py-3 px-6">
-                    {blog.category?.name || blog.category || "—"}
-                  </td>
-
+                  <td className="py-3 px-6">{blog.category?.name || "—"}</td>
                   <td className="py-3 px-6">{blog.author?.username || "—"}</td>
-                  <td className="py-3 px-6">{blog.views ?? 0}</td>
-                  <td className="py-3 px-6 capitalize">
-                    {blog.status ?? "pending"}
+                  <td
+                    className={`py-3 px-6 capitalize font-semibold ${
+                      blog.status === "published"
+                        ? "text-green-600"
+                        : blog.status === "draft"
+                        ? "text-yellow-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {blog.status || "pending"}
                   </td>
-
                   <td className="py-3 px-6 flex flex-wrap gap-2">
                     <button
-                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition"
+                      className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
                       onClick={() => handleApprove(blog.id)}
                       disabled={loadingBlogId === blog.id}
                     >
-                      {loadingBlogId === blog.id ? "Approving..." : "Approve"}
+                      Approve
                     </button>
                     <button
-                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600 transition"
+                      className="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600"
                       onClick={() => {
                         setSelectedBlog(blog);
                         setFormData({
                           title: blog.title,
                           content: blog.content,
-                          category:
-                            blog.category?.name || blog.category || "",
+                          category: blog.category?.name || "",
                           tags: blog.tags || [],
                           media: null,
                         });
@@ -743,13 +689,13 @@ const BlogsManagement = () => {
                       Edit
                     </button>
                     <button
-                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
+                      className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
                       onClick={() => handleDeleteBlog(blog.id)}
                     >
                       Delete
                     </button>
                     <button
-                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition"
+                      className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
                       onClick={() => {
                         setSelectedBlog(blog);
                         setActiveModal("addToBlog");
@@ -758,7 +704,7 @@ const BlogsManagement = () => {
                       Add Content
                     </button>
                     <button
-                      className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600 transition"
+                      className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
                       onClick={() => handleFlag(blog.id)}
                     >
                       Flag
@@ -768,7 +714,7 @@ const BlogsManagement = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="7" className="text-center py-6 text-gray-600">
+                <td colSpan="6" className="text-center py-6 text-gray-500 font-medium">
                   No blogs found.
                 </td>
               </tr>
@@ -777,148 +723,17 @@ const BlogsManagement = () => {
         </table>
       </div>
 
-      {/* 🧩 Modals */}
-      {activeModal === "add" && (
-        <BlogFormModal
-          title="Add New Blog"
-          formData={formData}
-          setFormData={setFormData}
-          categoryOptions={categoryOptions}
-          previewImage={previewImage}
-          setPreviewImage={setPreviewImage}
-          onSubmit={handleAddBlog}
-          onClose={() => setActiveModal(null)}
+      {/* ✅ Pagination */}
+      <div className="mt-6 flex justify-center">
+        <Paginations
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
         />
-      )}
-
-      {activeModal === "edit" && selectedBlog && (
-        <BlogFormModal
-          title="Edit Blog"
-          formData={formData}
-          setFormData={setFormData}
-          categoryOptions={categoryOptions}
-          previewImage={previewImage}
-          setPreviewImage={setPreviewImage}
-          onSubmit={handleEditBlog}
-          onClose={() => setActiveModal(null)}
-        />
-      )}
-
-      {activeModal === "addToBlog" && selectedBlog && (
-        <Modal title="Add Content to Blog" onClose={() => setActiveModal(null)}>
-          <textarea
-            value={extraContent}
-            onChange={(e) => setExtraContent(e.target.value)}
-            className="w-full border rounded px-3 py-2 mb-4 h-40"
-            placeholder="Enter extra content"
-          />
-          <button
-            onClick={handleAddToBlog}
-            className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded transition"
-          >
-            Add Content
-          </button>
-        </Modal>
-      )}
+      </div>
     </div>
   );
 };
 
-// 🧩 Blog Form Modal
-const BlogFormModal = ({
-  title,
-  formData,
-  setFormData,
-  categoryOptions,
-  previewImage,
-  setPreviewImage,
-  onSubmit,
-  onClose,
-}) => (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto animate-fadeIn">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">{title}</h2>
-
-      <input
-        type="text"
-        placeholder="Title"
-        value={formData.title}
-        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        className="border rounded w-full px-3 py-2 mb-3"
-      />
-
-      <select
-        value={formData.category}
-        onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-        className="border rounded w-full px-3 py-2 mb-3"
-      >
-        <option value="">Select Category</option>
-        {categoryOptions.map((cat) => (
-          <option key={cat} value={cat}>
-            {cat}
-          </option>
-        ))}
-      </select>
-
-      <div className="mb-3">
-        <label className="block mb-1 font-semibold">Tags (comma separated)</label>
-        <input
-          type="text"
-          placeholder="Enter tags separated by comma"
-          value={formData.tags?.join(", ") || ""}
-          onChange={(e) =>
-            setFormData({
-              ...formData,
-              tags: e.target.value.split(",").map((t) => t.trim()),
-            })
-          }
-          className="border rounded w-full px-3 py-2"
-        />
-      </div>
-
-      <ReactQuill
-        value={formData.content}
-        onChange={(val) => setFormData({ ...formData, content: val })}
-        className="mb-3 h-60"
-      />
-
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files[0];
-          setFormData({ ...formData, media: file });
-          if (file) setPreviewImage(URL.createObjectURL(file));
-        }}
-        className="border rounded w-full px-3 py-2 mb-4"
-      />
-
-      {previewImage && (
-        <img
-          src={previewImage}
-          alt="Preview"
-          className="w-full h-40 object-cover rounded-lg mb-4 border"
-        />
-      )}
-
-      <button
-        onClick={onSubmit}
-        className="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded transition"
-      >
-        {title.includes("Edit") ? "Update Blog" : "Add Blog"}
-      </button>
-
-      <button
-        onClick={onClose}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl font-bold"
-      >
-        ✖
-      </button>
-    </div>
-  </div>
-);
-
 export default BlogsManagement;
-
-
 

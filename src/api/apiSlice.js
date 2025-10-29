@@ -117,11 +117,44 @@ export const apiSlice = createApi({
       invalidatesTags: ["Profile"],
     }),
     getStats: builder.query({ query: () => "stats/", providesTags: ["Stats"] }),
+//     getStats: builder.query({
+//   query: () => "/api/admin/stats/",
+//   providesTags: ["Stats"],
+// }),
+
 
     /* ==========================
        📝 BLOGS CRUD ENDPOINTS
     ========================== */
     // getBlogs: builder.query({ query: () => "blogs/", providesTags: ["Blog"] }),
+    // getBlogs: builder.query({
+    //   query: ({
+    //     page = 1,
+    //     category = "",
+    //     search = "",
+    //     tag = "",
+    //     author = "",
+    //   }) => {
+    //     let url = `blogs/?page=${page}`;
+
+    //     if (category && category.toLowerCase() !== "all") {
+    //       url += `&category=${category}`;
+    //     }
+    //     if (search) {
+    //       url += `&search=${search}`;
+    //     }
+    //     if (tag) {
+    //       url += `&tag=${tag}`;
+    //     }
+    //     if (author) {
+    //       url += `&author=${author}`;
+    //     }
+
+    //     return url;
+    //   },
+    //   providesTags: ["Blog"],
+    // }),
+
     getBlogs: builder.query({
       query: ({
         page = 1,
@@ -148,6 +181,50 @@ export const apiSlice = createApi({
         return url;
       },
       providesTags: ["Blog"],
+
+      // 🧩 Added WebSocket live updates (real-time reactions/comments)
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+      ) {
+        // Wait until cache is ready
+        await cacheDataLoaded;
+
+        // ✅ Connect to WebSocket server
+        const ws = new WebSocket(`ws://127.0.0.1:8000/ws/reactions/`);
+
+        ws.onmessage = (event) => {
+          const data = JSON.parse(event.data);
+
+          // 🎯 Handle Reaction Updates
+          if (data.type === "reaction_update") {
+            updateCachedData((draft) => {
+              const blog = draft.results?.find((b) => b.id === data.blog_id);
+              if (blog) {
+                blog.reaction_summary = data.reaction_summary;
+              }
+            });
+          }
+
+          // 💬 Handle Comment Updates
+          if (data.type === "comment_update") {
+            updateCachedData((draft) => {
+              const blog = draft.results?.find((b) => b.id === data.blog_id);
+              if (blog) {
+                blog.latest_comments = data.comments;
+              }
+            });
+          }
+        };
+
+        ws.onopen = () => console.log("✅ WebSocket connected for blogs list");
+        ws.onclose = () =>
+          console.log("❌ WebSocket disconnected for blogs list");
+
+        // ❌ Close socket when cache entry is removed
+        await cacheEntryRemoved;
+        ws.close();
+      },
     }),
 
     // myBlogs
@@ -194,6 +271,27 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Blog"],
     }),
+
+    getAdminBlogs: builder.query({
+      query: ({ page = 1, status = "" }) => {
+        let url = `/admin/blogs/?page=${page}`;
+        if (status) url += `&status=${status}`;
+        return url;
+      },
+      providesTags: ["Blogs"],
+    }),
+
+    getAllBlogsAdmin: builder.query({
+      query: ({ search = "", category = "", status = "", page = 1 }) => {
+        let queryString = `admin/blogs/?page=${page}`;
+        if (search) queryString += `&search=${search}`;
+        if (category) queryString += `&category=${category}`;
+        if (status) queryString += `&status=${status}`;
+        return queryString;
+      },
+      providesTags: ["Blogs"],
+    }),
+
     updateBlog: builder.mutation({
       query: ({ id, data }) => ({
         url: `admin/blogs/${id}/update/`,
@@ -336,10 +434,16 @@ export const apiSlice = createApi({
 
     // admin comments
     getAllComments: builder.query({
-      query: () => `/admin/comments/`,
+      query: ({ page = 1, pageSize = 10, search = "", sort = "" } = {}) => {
+        let url = `/admin/comments/?page=${page}&page_size=${pageSize}`;
+
+        if (search) url += `&search=${search}`;
+        if (sort) url += `&sort=${sort}`;
+
+        return url;
+      },
       providesTags: ["Comments"],
     }),
-
     /* 🔴 Delete comment (for user or admin) */
     deleteComment: builder.mutation({
       query: (id) => ({
@@ -385,10 +489,9 @@ export const apiSlice = createApi({
        🔔 NOTIFICATIONS (Admin)
     =========================== */
     getAdminNotifications: builder.query({
-      query: () => "/admin/notifications/",
+      query: ({ page = 1 }) => `/admin/notifications/?page=${page}`,
       providesTags: ["Notifications"],
     }),
-
     markNotificationRead: builder.mutation({
       query: (id) => ({
         url: `/admin/notifications/${id}/mark-read/`,
@@ -405,9 +508,8 @@ export const apiSlice = createApi({
       invalidatesTags: ["Notifications"],
     }),
 
-    // Fetch all reactions
     getAllReactions: builder.query({
-      query: () => "/api/admin/reactions/",
+      query: ({ page = 1 }) => `/api/admin/reactions/?page=${page}`,
       providesTags: ["Reactions"],
     }),
     // Delete a reaction
@@ -547,6 +649,7 @@ export const {
   useUpdateMyBlogMutation,
   useDeleteMyBlogMutation,
   useGetAllBlogsQuery,
+  useGetAdminBlogsQuery,
   useGetBlogQuery,
   useAddToBlogMutation,
   useCreateBlogMutation,
